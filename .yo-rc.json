@@ -1,0 +1,16 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "version": "1.14.0",
+    "libraryName": "library-copier",
+    "libraryId": "006bc825-43fd-408c-92a2-94fcbcfa87f7",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "library-copier",
+    "solutionShortDescription": "library-copier description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
