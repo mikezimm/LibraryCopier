@@ -2,7 +2,7 @@ import * as React from 'react';
 import styles from './ModernCreator.module.scss';
 import { IAnyContent, IModernCreatorProps, IModernCreatorState } from './IModernCreatorProps';
 import { escape } from '@microsoft/sp-lodash-subset';
-import { createMirrorPage, getALVFinManContent } from './CreatePages';
+import { createMirrorPage, getALVFinManContent, updateMirrorPage } from './CreatePages';
 import { SourceInfo } from './DataInterface';
 
 import ReactJson from "react-json-view";
@@ -60,14 +60,22 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
    }
  
    private async updateProgress( latest: any ) {
-     let current = this.state.status;
-
+    //  let current = this.state.status;
     //  let result = Promise.resolve(latest);
     //  console.log('result')
-     current.unshift( latest );
-     this.setState({  status: current  });
+    //  current.unshift( latest );
+     this.setState({  status: latest  });
    }
  
+  //  private async updateProgress( latest: any ) {
+  //   let current = this.state.status;
+
+  //  //  let result = Promise.resolve(latest);
+  //  //  console.log('result')
+  //   current.unshift( latest );
+  //   this.setState({  status: current  });
+  // }
+
    public componentDidMount() {
      this.updateWebInfo( );
    }
@@ -93,22 +101,22 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     //  } else if ( this.props.description !== prevProps.description ) {
     //    refresh = true;
     //  }
- 
+
     //  if ( refresh === true ) {
     //    this.updateWebInfo( this.state.mainPivotKey );
     //  }
- 
+
    }
- 
+
    public async updateWebInfo ( ) {
- 
+
     let updateBucketsNow: boolean = false;
     let docs: IAnyContent[] = await getALVFinManContent( SourceInfo.docs, this.updateProgress.bind( this ) );
     this.setState({ docs: docs });
 
    }
- 
- 
+
+
    /***
   *    d8888b. db    db d8888b. db      d888888b  .o88b.      d8888b. d88888b d8b   db d8888b. d88888b d8888b. 
   *    88  `8D 88    88 88  `8D 88        `88'   d8P  Y8      88  `8D 88'     888o  88 88  `8D 88'     88  `8D 

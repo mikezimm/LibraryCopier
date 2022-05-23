@@ -11,7 +11,7 @@ export interface IModernCreatorProps {
 
 export interface IModernCreatorState {
   docs: IAnyContent[];
-  status: any[];
+  status: any;
 }
 
 export interface IAnyContent extends Partial<any> {
