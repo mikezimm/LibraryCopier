@@ -16,7 +16,7 @@ import { ClientsideWebpart } from "@pnp/sp/clientside-pages";
 import { PromotedState } from "@pnp/sp/clientside-pages";
 
 //Interfaces
-import { ISourceProps, ISourceInfo, IFMSearchType, IFMSearchTypes } from './DataInterface';
+import { ISourceProps, ISourceInfo, IFMSearchType, IFMSearchTypes, sitePagesColumns } from './DataInterface';
 
 //Constants
 import { SourceInfo, thisSelect, SearchTypes } from './DataInterface';
@@ -25,7 +25,7 @@ import { getExpandColumns, getKeysLike, getSelectColumns } from '@mikezimm/npmfu
 import { warnMutuallyExclusive } from 'office-ui-fabric-react';
 
 import { getHelpfullErrorV2 } from '@mikezimm/npmfunctions/dist/Services/Logging/ErrorHandler';
-import { IAnyContent } from './IModernCreatorProps';
+import { IAnyContent, ICreateThesePages } from './IModernCreatorProps';
 
 
 export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
@@ -59,7 +59,9 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
 
  }
 
- export async function updateMirrorPage( items: IAnyContent[], updateProgress: any ){
+ export async function updateMirrorPage( copyProps: ICreateThesePages, items: IAnyContent[], updateProgress: any ){
+
+  const destProps = copyProps.destPickedWeb;
 
   let results: any[] = [];
   let complete: any[] = [];
@@ -67,7 +69,7 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
   let links: any[] = [];
   let images: any[] = [];
 
-  const destWeb = Web('https://autoliv.sharepoint.com/sites/FinanceManual/TestContentCopy');
+  const destWeb = Web( destProps.ServerRelativeUrl );
 
   const partDefs = await destWeb.getClientsideWebParts();
   console.log('partDefs:', partDefs);
@@ -111,16 +113,25 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
 
           });
 
-          update.links = newWikiField.toLowerCase().split('autolivfinancialmanual').length;
+          let sourceWebUrl = copyProps.sourcePickedWeb.ServerRelativeUrl.toLowerCase();
+          let destWebUrl = copyProps.destPickedWeb.ServerRelativeUrl.toLowerCase();
+
+          let sourceLibraryUrl = `/${destWebUrl}/${copyProps.sourceLib}/` ;
+          let destLibraryUrl = destWebUrl + '/SitePages/' ;
+
+          update.links = newWikiField.toLowerCase().split( sourceWebUrl ).length;
           if ( update.links > 1  ) { links.push( item.FileLeafRef ) ; }
           //Replace all urls with new links
           //https://autoliv.sharepoint.com/sites//FinanceManual/Manual//StandardDocuments/Transaction%20exposure%20reporting%20instruction.aspx
-          newWikiField = newWikiField.replace( /\/autolivfinancialmanual\/standarddocuments/gi, '/FinanceManual/Manual/SitePages' );
+          
+          const regexFind = new RegExp( `${sourceLibraryUrl}`, 'gi' );
+          newWikiField = newWikiField.replace( regexFind, destLibraryUrl );
 
           const imageSplits = newWikiField.split('<img');
           if ( imageSplits.length > 1 ) { 
             images.push( item.FileLeafRef );
           }
+
           // if ( currentWikiField.indexOf('<h3>') > -1 ) {
           //   let finds = [];
           //   let splits = newWikiField.split('<h3>').map( find=> {
@@ -183,51 +194,47 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
       }
   }
 
-
 }
 
  //Standards are really site pages, supporting docs are files
- export async function getALVFinManContent( sourceProps: ISourceProps, updateProgress: any ) {
+ export async function getClassicContent( copyProps: ICreateThesePages, updateProgress: any ) {
 
+    const sourceProps = copyProps.sourcePickedWeb;
     // debugger;
-    let web = await Web( `${window.location.origin}${sourceProps.webUrl}` );
+    let web = await Web( `${window.location.origin}${sourceProps.ServerRelativeUrl}` );
 
-    let expColumns = getExpandColumns( sourceProps.columns );
-    let selColumns = getSelectColumns( sourceProps.columns );
+    let expColumns = getExpandColumns( sitePagesColumns );
+    let selColumns = getSelectColumns( sitePagesColumns );
 
     const expandThese = expColumns.join(",");
     //Do not get * columns when using standards so you don't pull WikiFields
-    let baseSelectColumns = sourceProps.selectThese ? sourceProps.selectThese : sourceProps.columns;
+    let baseSelectColumns = sitePagesColumns;
 
     //itemFetchCol
     //let selectThese = '*,WikiField,FileRef,FileLeafRef,' + selColumns.join(",");
     let selectThese = [ baseSelectColumns, ...selColumns, ...['WikiField'] ].join(",");
-    let restFilter = sourceProps.restFilter ? sourceProps.restFilter : '';
-    let orderBy = sourceProps.orderBy ? sourceProps.orderBy : null;
     let items = [];
+
     console.log('sourceProps', sourceProps );
     try {
-      if ( orderBy ) {
-        //This does NOT DO ANYTHING at this moment.  Not sure why.
-        items = await web.lists.getByTitle( sourceProps.listTitle ).items
-        .select(selectThese).expand(expandThese).filter(restFilter).orderBy(orderBy.prop, orderBy.asc ).getAll();
-      } else {
-        items = await web.lists.getByTitle( sourceProps.listTitle ).items
-        .select(selectThese).expand(expandThese).filter(restFilter).getAll();
-      }
-
+      items = await web.lists.getByTitle( copyProps.sourceLib ).items
+      .select(selectThese).expand(expandThese).getAll();
 
     } catch (e) {
-      getHelpfullErrorV2( e, true, true, 'getALVFinManContent ~ 73');
+      getHelpfullErrorV2( e, true, true, 'getClassicContent ~ 213');
       console.log('sourceProps', sourceProps );
     }
 
-    console.log( sourceProps.defType, sourceProps.listTitle , items );
+    console.log( 'getClassicContent', copyProps , items );
 
     // createMirrorPage( items, updateProgress ) ;
-    updateMirrorPage( items, updateProgress ) ;
-    return items;
+    if ( copyProps.doUpdates === true ) {
+      updateMirrorPage( copyProps, items, updateProgress ) ;
+    } else {
+      //Just return the items
+    }
 
+    return items;
 
   }
 
