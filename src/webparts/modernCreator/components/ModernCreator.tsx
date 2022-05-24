@@ -515,6 +515,11 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       // zzzText7: `${   this.properties.selectedProperties.join('; ') }`, //Info2 in some webparts.  Phrase describing important details such as "Time to check old Permissions: 86 snaps / 353ms"
 
       zzzNumber1: item.ID,
+      zzzNumber2: item.h1,
+      zzzNumber3: item.h2,
+      zzzNumber4: item.h3,
+      zzzNumber5: item.links,
+      zzzNumber6: item.images,
       // zzzNumber2: fetchInfo.regexTime,
       // zzzNumber3: fetchInfo.Block.length,
       // zzzNumber4: fetchInfo.Warn.length,

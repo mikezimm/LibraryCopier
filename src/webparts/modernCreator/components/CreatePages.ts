@@ -139,13 +139,18 @@ export async function _LinkIsValid(url)
           });
 
           let sourceWebUrl = copyProps.sourcePickedWeb.ServerRelativeUrl.toLowerCase();
-          let destWebUrl = copyProps.destPickedWeb.ServerRelativeUrl.toLowerCase();
+          let destWebUrl = copyProps.destPickedWeb.ServerRelativeUrl;
 
-          let sourceLibraryUrl = `/${destWebUrl}/${copyProps.sourceLib}/` ;
+          let sourceLibraryUrl = `${sourceWebUrl}/${copyProps.sourceLib}/` ;
           let destLibraryUrl = destWebUrl + '/SitePages/' ;
 
-          update.links = newWikiField.toLowerCase().split( sourceWebUrl ).length;
-          if ( update.links > 1  ) { links.push( item.FileLeafRef ) ; }
+          update.links = newWikiField.toLowerCase().split( sourceWebUrl ).length - 1;
+          if ( update.links > 0 ) {
+            console.log('found links:' , update.links, item, );
+          }
+          if ( update.links > 0  ) { links.push( item.FileLeafRef ) ; }
+
+
           //Replace all urls with new links
           //https://autoliv.sharepoint.com/sites//FinanceManual/Manual//StandardDocuments/Transaction%20exposure%20reporting%20instruction.aspx
           
@@ -153,10 +158,17 @@ export async function _LinkIsValid(url)
           newWikiField = newWikiField.replace( regexFind, destLibraryUrl );
 
           const imageSplits = newWikiField.split('<img');
-          update.images = images.length -1;
+
           if ( imageSplits.length > 1 ) { 
             images.push( item.FileLeafRef );
+            update.images ++;
           }
+
+          item.links = update.links;
+          item.images = update.images;
+          item.h1 = update.h1.length;
+          item.h2 = update.h2.length;
+          item.h3 = update.h3.length;
 
           // if ( currentWikiField.indexOf('<h3>') > -1 ) {
           //   let finds = [];
@@ -231,6 +243,8 @@ export async function _LinkIsValid(url)
               <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
               <div>via script at: ${ rightNow.toUTCString() }</div>
               <div>Result: ${ result }</div>
+              <div>Links update: ${ update.links }</div>
+              <div>Images found: ${ update.images }</div>
               <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
             </div>`;
 
@@ -263,6 +277,7 @@ export async function _LinkIsValid(url)
 
           }
 
+          item.result = result;
           //updateProgress( latest: any, copyProps: ICreateThesePages, item: IAnyContent, result: string )
           let itemCount = i + 1;
           setTimeout(() => updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps }, item, result, `${ itemCount } of ${items.length} : ${ item.FileLeafRef}`  ) , 100 );
