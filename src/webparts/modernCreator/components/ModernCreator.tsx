@@ -31,7 +31,7 @@ import { SourceInfo } from './DataInterface';
 import * as strings from 'ModernCreatorWebPartStrings';
 import { DisplayMode } from '@microsoft/sp-core-library';
 
-export const BaseErrorTrace = `Easy Contents|${ strings.analyticsWeb }|${ strings.analyticsListLog }`;
+export const BaseErrorTrace = `ModernCreator|${ strings.analyticsWeb }|${ strings.analyticsList }`;
 
 export type ISourceOrDest = 'source' | 'dest' ;
 
@@ -67,9 +67,11 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     } else { defValue = this.state.comment; }
 
-    const padding = sourceOrDest === 'dest' ? null: '0px' ;
+    const side = sourceOrDest === 'dest' || sourceOrDest === 'source' ? 'left' : 'right' ;
+    const padding = side === 'right' ? null: '0px' ;
+    const width = side === 'right' ? '300px' : '700px' ;
     const ele =
-    <div className = { styles.textBoxFlexContent } style={{ padding: padding, width: sourceOrDest === 'library' ? '300px' : '700px' }}>
+    <div className = { styles.textBoxFlexContent } style={{ padding: padding, width: width }}>
       <div className={ styles.textBoxLabel }>{ `${sourceOrDest.charAt(0).toUpperCase() + sourceOrDest.substr(1).toLowerCase()}` }</div>
       <TextField
         className={ styles.textField }
@@ -127,6 +129,8 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       sourceLibValid: false,
       destWebValid: false,
 
+      progressComment: '',
+
       copyProps: {
         user: this.props.pageContext.user.displayName,
         getSource: true,
@@ -166,9 +170,9 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
  
    //updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results } )
    //updateProgress( 'Page Copy', result, item, { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps } )
-   private async updateProgress( latest: any, item: IAnyContent, result: string ) {
-     this.setState({  status: latest  });
-     this.saveLoadAnalytics( 'Page Copy', result, item, latest.copyProps );
+   private async updateProgress( latest: any, item: IAnyContent, result: string, progressComment: string ) {
+     this.setState({  status: latest , progressComment: progressComment });
+     this.saveLoadAnalytics( 'Page Copy', result, item, latest.copyProps,  );
    }
 
   //  private async updateProgress( latest: any ) {
@@ -296,6 +300,10 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       Replace pages
     </div>;
 
+    const currentProgress =<div className={ '' } style={ { padding: '10px', height: '30px', fontSize: 'larger', fontWeight: 600 } }>
+      { this.state.progressComment }
+    </div>;
+
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
         <div className={ null }>
@@ -316,6 +324,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
             { replaceButton }
           </div>
 
+          { currentProgress }
           <ReactJson src={ this.state.pages } name={ 'Source Pages' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
           <ReactJson src={ this.state.status } name={ 'Updates' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
 
@@ -364,7 +373,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       stateError.push( <div className={ styles.textBoxErrorContent } style={ null }> { errMessage } </div>);
     }
 
-    let theSite: ISite = await getSiteInfo( webUrl, false, ' > GenWP.tsx ~ 831', BaseErrorTrace );
+    let theSite: ISite = await getSiteInfo( webUrl, false, ' > ModernCreator.tsx ~ 376', BaseErrorTrace );
 
     let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
 
@@ -441,11 +450,11 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     let loadProperties: IZLoadAnalytics = {
       SiteID: this.props.pageContext.site.id['_guid'] as any,  //Current site collection ID for easy filtering in large list
       WebID:  this.props.pageContext.web.id['_guid'] as any,  //Current web ID for easy filtering in large list
-      SiteTitle:  this.props.pageContext.web.title as any, //Web Title
-      TargetSite:  this.props.pageContext.web.serverRelativeUrl,  //Saved as link column.  Displayed as Relative Url
-      ListID:  `${this.props.pageContext.list.id}`,  //Current list ID for easy filtering in large list
-      ListTitle:  this.props.pageContext.list.title,
-      TargetList: `${this.props.pageContext.web.serverRelativeUrl}`,  //Saved as link column.  Displayed as Relative Url
+      SiteTitle:  this.state.copyProps.destPickedWeb.title, //Web Title
+      TargetSite:  this.state.copyProps.destPickedWeb.ServerRelativeUrl,  //Saved as link column.  Displayed as Relative Url
+      ListID:  `${this.state.copyProps.sourcePickedWeb.ServerRelativeUrl}/${this.state.copyProps.sourceLib}`,  //Current list ID for easy filtering in large list
+      ListTitle:  `${this.state.copyProps.sourcePickedWeb.ServerRelativeUrl}/${this.state.copyProps.sourceLib}`,
+      TargetList: `${this.state.copyProps.destPickedWeb.ServerRelativeUrl}/SitePages`,  //Saved as link column.  Displayed as Relative Url
 
     };
 
@@ -485,6 +494,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     // FPSProps = JSON.stringify( FPSPropsObj );
 
     let saveObject: IZSentAnalytics = {
+
       loadProperties: loadProperties,
 
       Title: Title,  //General Label used to identify what analytics you are saving:  such as Web Permissions or List Permissions.

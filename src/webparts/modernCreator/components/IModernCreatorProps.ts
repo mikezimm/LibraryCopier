@@ -72,6 +72,8 @@ export interface IModernCreatorState {
   pages: IAnyContent[];
   status: any;
 
+  progressComment: string;
+
   sourceError?: any[];
   libError?: any[];
   destError?: any[];

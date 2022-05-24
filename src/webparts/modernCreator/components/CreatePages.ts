@@ -95,9 +95,9 @@ export async function _LinkIsValid(url)
   console.log('partDefs:', partDefs);
   const partDef = partDefs.filter(c => c.Name === "FPS Page Info - TOC & Props");
 
-  for (var i = 0; i < items.length; i++) {
+  for (var i = 0; i < items.length; i++ ) {
 
-      if ( i < 3 ) {
+      if ( i < 200 ) {
           let item = items[i];
           let result = 'TBD';
           // use the web factory to create a page in a specific web
@@ -224,7 +224,10 @@ export async function _LinkIsValid(url)
           try {
 
             let rightNow = new Date();
+            // <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
+            // <div>Copied from <a onclick={window.open(item.FileRef, "_blank")}href="${ item.FileRef }">${item.FileRef}</a></div>
             const logHTML = `<div>
+              
               <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
               <div>via script at: ${ rightNow.toUTCString() }</div>
               <div>Result: ${ result }</div>
@@ -261,8 +264,8 @@ export async function _LinkIsValid(url)
           }
 
           //updateProgress( latest: any, copyProps: ICreateThesePages, item: IAnyContent, result: string )
-
-          setTimeout(() => updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps }, item, result,  ) , 100 );
+          let itemCount = i + 1;
+          setTimeout(() => updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps }, item, result, `${ itemCount } of ${items.length} : ${ item.FileLeafRef}`  ) , 100 );
           // updateProgress( { name: item.FileLeafRef , title: title, } );
           
         }//end all items
