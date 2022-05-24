@@ -9,7 +9,7 @@ declare interface IModernCreatorWebPartStrings {
 
   analyticsWeb: string;
   analyticsList: string;
-  analyticsListErrors: string;
+  analyticsListLog: string;
 
 }
 

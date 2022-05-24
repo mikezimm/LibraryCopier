@@ -41,6 +41,8 @@ export default class ModernCreatorWebPart extends BaseClientSideWebPart<IModernC
         pageContext: this.context.pageContext,
         wpContext: this.context,
 
+        displayMode: this.displayMode,
+
       }
     );
 

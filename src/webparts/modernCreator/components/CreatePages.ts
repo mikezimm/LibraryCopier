@@ -10,7 +10,7 @@ import "@pnp/sp/items";
 import "@pnp/sp/webs";
 import "@pnp/sp/clientside-pages/web";
 
-import { CreateClientsidePage, ClientsideText, ClientsidePageFromFile } from "@pnp/sp/clientside-pages";
+import { CreateClientsidePage, ClientsideText, ClientsidePageFromFile, IClientsidePage } from "@pnp/sp/clientside-pages";
 import { ClientsideWebpart } from "@pnp/sp/clientside-pages";
 
 import { PromotedState } from "@pnp/sp/clientside-pages";
@@ -26,9 +26,28 @@ import { warnMutuallyExclusive } from 'office-ui-fabric-react';
 
 import { getHelpfullErrorV2 } from '@mikezimm/npmfunctions/dist/Services/Logging/ErrorHandler';
 import { IAnyContent, ICreateThesePages } from './IModernCreatorProps';
+import { divide } from 'lodash';
 
 
 export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
+
+export async function _LinkIsValid(url)
+{
+    //Require this is filled out.
+    if ( !url ) { return false; }
+
+    var http = new XMLHttpRequest();
+    http.open('HEAD', url, false);
+    let isValid = true;
+    try {
+      await http.send();
+      isValid = http.status!=404 ? true : false;
+    }catch(e) {
+      isValid = false;
+    }
+
+    return isValid;
+} 
 
  export async function createMirrorPage( items: IAnyContent[], updateProgress: any ){
 
@@ -68,8 +87,9 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
   let fails: any[] = [];
   let links: any[] = [];
   let images: any[] = [];
+  let skips: any[] = [];
 
-  const destWeb = Web( destProps.ServerRelativeUrl );
+  const destWeb = Web( `${window.location.origin}${destProps.ServerRelativeUrl}` );
 
   const partDefs = await destWeb.getClientsideWebParts();
   console.log('partDefs:', partDefs);
@@ -77,11 +97,15 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
 
   for (var i = 0; i < items.length; i++) {
 
-      if ( i < 200 ) {
+      if ( i < 3 ) {
           let item = items[i];
+          let result = 'TBD';
           // use the web factory to create a page in a specific web
           let title = item.Title ? item.Title : item.FileLeafRef.replace('.aspx','');
-          let dashFileName = item.FileLeafRef.replace(' ','-'); 
+          let dashFileName = item.FileLeafRef.replace(/\s/g,'-'); 
+
+          let testUrl = `${ copyProps.destPickedWeb.url}/SitePages/${dashFileName}`;
+          let destExists = await _LinkIsValid( testUrl );
 
           const currentWikiField = item.WikiField;
           let newWikiField = `${item.WikiField}`;
@@ -94,6 +118,7 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
             h2: [],
             h3: [],
             links: 0,
+            images: 0,
             sections: [],
           };
 
@@ -128,6 +153,7 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
           newWikiField = newWikiField.replace( regexFind, destLibraryUrl );
 
           const imageSplits = newWikiField.split('<img');
+          update.images = images.length -1;
           if ( imageSplits.length > 1 ) { 
             images.push( item.FileLeafRef );
           }
@@ -140,8 +166,33 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
           //   updates.h3 = finds;
           //   newWikiField = splits.join('<h4>').split('</h3>').join('</h4>');
           // }
+          let page: IClientsidePage = null;
 
-          const page = await CreateClientsidePage( destWeb , item.FileLeafRef.replace('.aspx',''), title );
+          if ( destExists === true ) {
+
+            page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath( `${ copyProps.destPickedWeb.ServerRelativeUrl}/SitePages/${dashFileName}` ));
+            await page.load();
+            let removedCount = 0;
+            page.sections.map( section => {
+              section.remove();
+              removedCount ++;
+            });
+
+            if ( removedCount > 0 ) {
+              result = 'Replaced Sections - ' + removedCount;
+
+            } else {
+              result = 'Added new sections - ';
+
+            }
+
+
+          } else {
+            page = await CreateClientsidePage( destWeb , item.FileLeafRef.replace('.aspx',''), title );
+            result = 'Created page';
+
+          }
+
           // const page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath(`/sites/FinanceManual/TestContentCopy/sitepages/${dashFileName}`));
 
           console.log('created page3', page);
@@ -171,6 +222,24 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
           }
 
           try {
+
+            let rightNow = new Date();
+            const logHTML = `<div>
+              <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
+              <div>via script at: ${ rightNow.toUTCString() }</div>
+              <div>Result: ${ result }</div>
+              <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
+            </div>`;
+
+            const section3 = page.addSection().addControl(new ClientsideText( logHTML ));
+            update.sections.push( 'Added script log section');
+
+          } catch {
+            comments.push('FAILED script log Content');
+            update.sections.push( 'FAILED script log section');
+          }
+
+          try {
             await page.save();
             update.saved = true;
 
@@ -181,20 +250,25 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
           update.comments = comments.join('; ');
           results.push( update );
 
+
           if ( update.comments.length === 0 ) {
             complete.push( update );
 
           } else {
             fails.push( update );
+            result += 'Failures: ' + comments.length;
+
           }
 
-          setTimeout(() => updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results } ) , 100 );
+          //updateProgress( latest: any, copyProps: ICreateThesePages, item: IAnyContent, result: string )
+
+          setTimeout(() => updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps }, item, result,  ) , 100 );
           // updateProgress( { name: item.FileLeafRef , title: title, } );
+          
+        }//end all items
 
-      }
+      }//end for all items
   }
-
-}
 
  //Standards are really site pages, supporting docs are files
  export async function getClassicContent( copyProps: ICreateThesePages, updateProgress: any ) {
@@ -216,12 +290,13 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
     let items = [];
 
     console.log('sourceProps', sourceProps );
+    let errMess = null;
     try {
       items = await web.lists.getByTitle( copyProps.sourceLib ).items
       .select(selectThese).expand(expandThese).getAll();
 
     } catch (e) {
-      getHelpfullErrorV2( e, true, true, 'getClassicContent ~ 213');
+      errMess = getHelpfullErrorV2( e, true, true, 'getClassicContent ~ 213');
       console.log('sourceProps', sourceProps );
     }
 
@@ -234,7 +309,7 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
       //Just return the items
     }
 
-    return items;
+    return { items: items, error: errMess, copyProps: copyProps };
 
   }
 

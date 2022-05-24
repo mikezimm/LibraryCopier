@@ -32,3 +32,80 @@
     }
   }
 }
+
+.normalButton {
+  transition: all, .3s ease;
+  cursor: pointer;
+  padding: 10px 20px;
+  margin: 20px;
+  font-size: larger;
+  font-weight: 600;
+  background:  #f2f2f2f2;
+}
+
+.normalButton:hover {
+  transition: all, .3s ease;
+  background:  #c7c7c7;
+}
+
+
+.sourceInfo{
+  display: flex;
+  flex-direction: row;
+  padding: 10px 20px 20px 20px;
+  // width: 100%;
+  // background: lightgray;
+
+}
+
+.inputChoices {
+  display: flex;
+  flex-direction: row;
+
+}
+
+.textBoxFlexContent{
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px 20px 20px;
+  // width: 100%;
+  // background: lightgray;
+
+}
+
+.textBoxLabel{
+  font-size: larger;
+  font-weight: bolder;
+}
+
+//Warning
+.textBoxErrorTitle {
+  padding: 15px;
+  font-size: larger;
+  font-weight: bolder;
+  background: yellow;
+  color: red;
+
+}
+
+.textBoxErrorContent {
+  background: yellow;
+  color: red;
+  padding: 0px 0px 20px 35px;
+
+}
+
+.textField {
+  display: table-cell;
+  width: 100%;
+
+  label {
+    font-weight: bold;
+  }
+
+  input {
+    //height: 32px;
+    min-width: 200px;
+    font-size: larger;
+  }
+}

@@ -7,6 +7,7 @@ import { ISite } from "@pnp/sp/presets/all";
 import { IPickedWebBasic, IPickedList } from '@mikezimm/npmfunctions/dist/Lists/IListInterfaces';
 
 import { ICachedWebIds } from './IListComponentTypes';
+import { DisplayMode } from "@microsoft/sp-core-library";
 
 export interface IModernCreatorProps {
   description: string;
@@ -14,6 +15,8 @@ export interface IModernCreatorProps {
   environmentMessage: string;
   hasTeamsContext: boolean;
   userDisplayName: string;
+
+  displayMode: DisplayMode;
 
   pageContext: PageContext;
   wpContext: WebPartContext;
@@ -37,6 +40,7 @@ export type IExisting = 'overWrite' | 'skip' | 'copy';
 
 export interface ICreateThesePages {
 
+  user: string;
   sourcePickedWeb : IPickedWebBasic;
   destPickedWeb : IPickedWebBasic;
   sourceLib: string;
@@ -59,6 +63,7 @@ export interface ICreateThesePages {
 export interface IModernCreatorState {
   sourceWeb: string;
   destWeb: string;
+  comment: string;
 
   sourceWebValid: boolean;
   sourceLibValid: boolean;

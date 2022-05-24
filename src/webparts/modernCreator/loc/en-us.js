@@ -10,8 +10,8 @@ define([], function() {
 
     "analyticsWeb": "/sites/Templates/Analytics/",
 
-    "analyticsList": "ClassicCopy",
-    "analyticsListErrors": "ClassicCopyLog",
+    "analyticsList": "ClassicPageViews",
+    "analyticsListLog": "ClassicPageCopyLog",
 
   }
 });

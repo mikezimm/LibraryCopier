@@ -3,18 +3,35 @@ import styles from './ModernCreator.module.scss';
 import { IAnyContent, ICreateThesePages, IModernCreatorProps, IModernCreatorState } from './IModernCreatorProps';
 import { sp, Views, IViews, ISite } from "@pnp/sp/presets/all";
 
+import { Label, ILabelStyles } from 'office-ui-fabric-react/lib/Label';
+import { Pivot, PivotItem, IPivotItemProps} from 'office-ui-fabric-react/lib/Pivot';
+import { IStyleSet } from 'office-ui-fabric-react/lib/Styling';
+// For Pivot ^^^^
+
+import { Icon } from 'office-ui-fabric-react/lib/Icon';
+import { TextField,  IStyleFunctionOrObject, ITextFieldStyleProps, ITextFieldStyles } from "office-ui-fabric-react";
+import { Web, IWeb } from "@pnp/sp/presets/all";
+
+import { IconButton, IIconProps, IContextualMenuProps, Stack, Link } from 'office-ui-fabric-react';
+import { ButtonGrid, } from 'office-ui-fabric-react';
+
 import { escape } from '@microsoft/sp-lodash-subset';
 
 import ReactJson from "react-json-view";
 
+
+import { saveAnalytics3 } from '@mikezimm/npmfunctions/dist/Services/Analytics/analytics2';
+import { IZLoadAnalytics, IZSentAnalytics, } from '@mikezimm/npmfunctions/dist/Services/Analytics/interfaces';
+
 import { getSiteInfo, getWebInfoIncludingUnique } from '@mikezimm/npmfunctions/dist/Services/Sites/getSiteInfo';
 
-import { createMirrorPage, getClassicContent, updateMirrorPage } from './CreatePages';
+import { createMirrorPage, getClassicContent, updateMirrorPage, _LinkIsValid } from './CreatePages';
 import { SourceInfo } from './DataInterface';
 
 import * as strings from 'ModernCreatorWebPartStrings';
+import { DisplayMode } from '@microsoft/sp-core-library';
 
-export const BaseErrorTrace = `Easy Contents|${ strings.analyticsWeb }|${ strings.analyticsListErrors }`;
+export const BaseErrorTrace = `Easy Contents|${ strings.analyticsWeb }|${ strings.analyticsListLog }`;
 
 export type ISourceOrDest = 'source' | 'dest' ;
 
@@ -22,7 +39,57 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
   private lastSourceWeb = this.props.sourceWeb ? this.props.sourceWeb  : '/sites/AutolivFinancialManual/';
   private lastSourceLib = this.props.sourceLib ? this.props.sourceLib  : 'StandardDocuments';
-  private lastDestWeb = this.props.destWeb ? this.props.destWeb  : this.props.pageContext.web.serverRelativeUrl;
+  private lastDestWeb = this.props.destWeb ? this.props.destWeb  : this.props.pageContext.web.serverRelativeUrl + '/';
+  private lastComment = 'Testing';
+
+  //Format copied from:  https://developer.microsoft.com/en-us/fluentui#/controls/web/textfield
+  private getWebBoxStyles( props: ITextFieldStyleProps): Partial<ITextFieldStyles> {
+    const { required } = props;
+    return { fieldGroup: [ { width: '75%', maxWidth: '600px' }, { borderColor: 'lightgray', }, ], };
+  }
+
+  private createWebInput( sourceOrDest: ISourceOrDest | 'library' | 'comment' ) {
+
+    let errors = [];
+    let defValue = '';
+
+    if ( sourceOrDest === 'source' ) {
+      errors = this.state.sourceError;
+      defValue = this.state.sourceWeb;
+
+    } else if ( sourceOrDest === 'dest' ) {
+      errors = this.state.destError;
+      defValue = this.state.destWeb;
+
+    } else  if ( sourceOrDest === 'library' ) {
+      errors = this.state.libError;
+      defValue = this.state.copyProps.sourceLib;
+
+    } else { defValue = this.state.comment; }
+
+    const padding = sourceOrDest === 'dest' ? null: '0px' ;
+    const ele =
+    <div className = { styles.textBoxFlexContent } style={{ padding: padding, width: sourceOrDest === 'library' ? '300px' : '700px' }}>
+      <div className={ styles.textBoxLabel }>{ `${sourceOrDest.charAt(0).toUpperCase() + sourceOrDest.substr(1).toLowerCase()}` }</div>
+      <TextField
+        className={ styles.textField }
+        styles={ this.getWebBoxStyles  } //this.getReportingStyles
+        defaultValue={ defValue }
+        autoComplete='off'
+        onChange={ sourceOrDest === 'comment' ? this.commentChange.bind( this ) : sourceOrDest === 'library' ? this.onLibChange.bind( this ) : this._onWebUrlChange.bind( this, sourceOrDest, ) }
+        validateOnFocusIn
+        validateOnFocusOut
+        multiline= { false }
+        autoAdjustHeight= { true }
+
+      />{ errors && errors.length > 0 ? 
+        <div style={ null }>
+           { errors }
+        </div> : null }
+      </div>;
+
+      return ele;
+  }
 
   /***
   *     .o88b.  .d88b.  d8b   db .d8888. d888888b d8888b. db    db  .o88b. d888888b  .d88b.  d8888b. 
@@ -44,6 +111,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       // sourceWeb: this.props.sourceWeb ? this.props.sourceWeb  : this.props.pageContext.web.serverRelativeUrl,
       sourceWeb: this.lastSourceWeb,
       destWeb: this.lastDestWeb,
+      comment: this.lastComment,
 
       sourceSite: null,
       destSite: null,
@@ -60,7 +128,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       destWebValid: false,
 
       copyProps: {
-    
+        user: this.props.pageContext.user.displayName,
         getSource: true,
         doUpdates: false,
         existing: 'skip',
@@ -96,8 +164,11 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
      };
    }
  
-   private async updateProgress( latest: any ) {
+   //updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results } )
+   //updateProgress( 'Page Copy', result, item, { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps } )
+   private async updateProgress( latest: any, item: IAnyContent, result: string ) {
      this.setState({  status: latest  });
+     this.saveLoadAnalytics( 'Page Copy', result, item, latest.copyProps );
    }
 
   //  private async updateProgress( latest: any ) {
@@ -109,10 +180,12 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
   //   this.setState({  status: current  });
   // }
 
-   public componentDidMount() {
+   public async componentDidMount() {
      
-    this._onWebUrlChange(this.lastSourceWeb, 'source', );
-    this._onWebUrlChange(this.lastDestWeb, 'dest', );
+    await this._onWebUrlChange('source', null, this.lastSourceWeb,  );
+    await this._onWebUrlChange('dest', null, this.lastDestWeb,  );
+    await this.updateLibChange( this.lastSourceLib,  );
+
 
     // this.startCopyAction( );
 
@@ -146,12 +219,42 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
    }
 
-   public async startCopyAction ( ) {
+   
+   public async startGetAction ( ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) );
+    copyProps.getSource = true;
+    copyProps.doUpdates = false;
 
     let updateBucketsNow: boolean = false;
 
-    let pages: IAnyContent[] = await getClassicContent( this.state.copyProps, this.updateProgress.bind( this ) );
-    this.setState({ pages: pages });
+    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ) );
+    this.setState({ pages: results.items, copyProps: copyProps  });
+
+   }
+
+   public async startUpdateAction ( ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) );
+    copyProps.getSource = true;
+    copyProps.doUpdates = true;
+    copyProps.existing = 'skip';
+
+    let updateBucketsNow: boolean = false;
+
+    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ) );
+    this.setState({ pages: results.items, copyProps: copyProps  });
+
+   }
+
+   public async startReplaceAction ( ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) );
+    copyProps.getSource = true;
+    copyProps.doUpdates = true;
+    copyProps.existing = 'overWrite';
+
+    let updateBucketsNow: boolean = false;
+
+    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ) );
+    this.setState({ pages: results.items, copyProps: copyProps  });
 
    }
 
@@ -176,9 +279,43 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       userDisplayName
     } = this.props;
 
+    let sourceUrl = this.createWebInput('source');
+    let destUrl = this.createWebInput('dest');
+    let sourceLib = this.createWebInput('library');
+    let comment = this.createWebInput('comment');
+
+    const fetchButton =<div className={ styles.normalButton } onClick={ this.startGetAction.bind( this )}>
+      Get Source pages
+    </div>;
+
+    const updateButton =<div className={ styles.normalButton } onClick={ this.startUpdateAction.bind( this )}>
+      Update pages
+    </div>;
+
+    const replaceButton =<div className={ styles.normalButton } onClick={ this.startReplaceAction.bind( this )}>
+      Replace pages
+    </div>;
+
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
         <div className={ null }>
+          <div style={{ background: 'lightgray' }}>
+            <div className={ styles.sourceInfo}>
+              { sourceUrl }
+              { sourceLib }
+            </div>
+            <div className={ styles.sourceInfo}>
+              { destUrl }
+              { comment }
+            </div>
+          </div>
+
+          <div className={ styles.inputChoices }>
+            { fetchButton }
+            { updateButton }
+            { replaceButton }
+          </div>
+
           <ReactJson src={ this.state.pages } name={ 'Source Pages' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
           <ReactJson src={ this.state.status } name={ 'Updates' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
 
@@ -204,7 +341,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     setTimeout(() => {
       if (this.lastSourceWeb === NewValue ) {
         this.lastSourceWeb = this.lastSourceWeb;
-        this._onWebUrlChange(this.lastSourceWeb, 'source', );
+        this._onWebUrlChange( 'source', null, this.lastSourceWeb,  );
       } else {
 
       }
@@ -212,7 +349,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
   }
 
   //Copied from GenericWebpart.tsx
-  private async _onWebUrlChange(webUrl: string, sourceOrDest: ISourceOrDest , webURLStatus: string = null ){
+  private async _onWebUrlChange( sourceOrDest: ISourceOrDest , ev: any, webUrl: string, ){
 
     console.log('_onWebUrlChange Fetchitng Lists ====>>>>> :', webUrl );
 
@@ -223,8 +360,8 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     errMessage = pickedWeb.error;
     if ( pickedWeb.error && pickedWeb.error.length > 0 ) {
-      stateError.push( <div style={{ padding: '15px', background: 'yellow' }}> <span style={{ fontSize: 'larger', fontWeight: 600 }}>Can't find the site</span> </div>);
-      stateError.push( <div style={{ paddingLeft: '25px', paddingBottom: '30px', background: 'yellow' }}> <span style={{ fontSize: 'large', color: 'red'}}> { errMessage }</span> </div>);
+      stateError.push( <div className={ styles.textBoxErrorTitle } style={ null }>Can't find the site </div>);
+      stateError.push( <div className={ styles.textBoxErrorContent } style={ null }> { errMessage } </div>);
     }
 
     let theSite: ISite = await getSiteInfo( webUrl, false, ' > GenWP.tsx ~ 831', BaseErrorTrace );
@@ -234,18 +371,158 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     let isCurrentWeb: boolean = false;
     if ( webUrl.toLowerCase().indexOf( this.props.pageContext.web.serverRelativeUrl.toLowerCase() ) > -1 ) { isCurrentWeb = true ; }
 
+    let webValid = stateError.length === 0 ? true : false;
     if ( sourceOrDest === 'source' ) {
       copyProps.sourcePickedWeb = pickedWeb;
 
-      this.setState({ sourceWeb: webUrl, sourceError: stateError, copyProps: copyProps , isCurrentWeb: isCurrentWeb, sourceSite: theSite, webURLStatus: webURLStatus });
+      this.setState({ sourceWeb: webUrl, sourceError: stateError, copyProps: copyProps , isCurrentWeb: isCurrentWeb, sourceSite: theSite, sourceWebValid: webValid });
 
     } else {
       copyProps.destPickedWeb = pickedWeb;
-      this.setState({ destWeb: webUrl, destError: stateError, copyProps: copyProps, isCurrentWeb: isCurrentWeb, destSite: theSite, webURLStatus: webURLStatus });
+      this.setState({ destWeb: webUrl, destError: stateError, copyProps: copyProps, isCurrentWeb: isCurrentWeb, destSite: theSite, destWebValid: webValid});
 
     }
 
     return;
+
+  }
+
+  private async onLibChange( ev: any ) {
+
+    await this.updateLibChange( ev.target.value );
+
+  }
+
+
+  private async updateLibChange( value: string, ) {
+
+    let errMessage = null;
+    let stateError : any[] = [];
+
+    let testUrl = `${this.state.copyProps.sourcePickedWeb.url}/${value}/Forms/`;
+
+    let sourceLibValid = await _LinkIsValid( testUrl );
+
+    if ( sourceLibValid !== true ) {
+      errMessage = 'Double check spelling :(';
+      stateError.push( <div className={ styles.textBoxErrorTitle } style={ null }>LibraryName does not exist</div>);
+      stateError.push( <div className={ styles.textBoxErrorContent } style={ null }> { errMessage } </div>);
+    }
+
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+    copyProps.sourceLib = value;
+
+    this.setState({ sourceLibValid: sourceLibValid, libError: stateError, copyProps: copyProps,  });
+
+  }
+
+
+  private async commentChange( ev: any, ) {
+    this.lastComment = ev.target.value;
+    this.setState({ comment: this.lastComment, });
+
+  }
+
+/***
+ *     .d8b.  d8b   db  .d8b.  db      db    db d888888b d888888b  .o88b. .d8888. 
+ *    d8' `8b 888o  88 d8' `8b 88      `8b  d8' `~~88~~'   `88'   d8P  Y8 88'  YP 
+ *    88ooo88 88V8o 88 88ooo88 88       `8bd8'     88       88    8P      `8bo.   
+ *    88~~~88 88 V8o88 88~~~88 88         88       88       88    8b        `Y8b. 
+ *    88   88 88  V888 88   88 88booo.    88       88      .88.   Y8b  d8 db   8D 
+ *    YP   YP VP   V8P YP   YP Y88888P    YP       YP    Y888888P  `Y88P' `8888Y' 
+ *                                                                                
+ *                                                                                
+ */
+ private async saveLoadAnalytics( Title: string, Result: string, item: IAnyContent, copyProps: ICreateThesePages ) {
+
+    // Do not save anlytics while in Edit Mode... only after save and page reloads
+    if ( this.props.displayMode === DisplayMode.Edit ) { return; }
+
+    let loadProperties: IZLoadAnalytics = {
+      SiteID: this.props.pageContext.site.id['_guid'] as any,  //Current site collection ID for easy filtering in large list
+      WebID:  this.props.pageContext.web.id['_guid'] as any,  //Current web ID for easy filtering in large list
+      SiteTitle:  this.props.pageContext.web.title as any, //Web Title
+      TargetSite:  this.props.pageContext.web.serverRelativeUrl,  //Saved as link column.  Displayed as Relative Url
+      ListID:  `${this.props.pageContext.list.id}`,  //Current list ID for easy filtering in large list
+      ListTitle:  this.props.pageContext.list.title,
+      TargetList: `${this.props.pageContext.web.serverRelativeUrl}`,  //Saved as link column.  Displayed as Relative Url
+
+    };
+
+    let zzzRichText1Obj = copyProps;
+    let zzzRichText2Obj = {
+      Author: item.Author.Title,
+      Editor: item.Editor.Title,
+      Created: item.Created,
+      Modified: item.Modified,
+      ID: item.ID,
+    };
+    let zzzRichText3Obj = null;
+
+    console.log( 'zzzRichText1Obj:', zzzRichText1Obj);
+    console.log( 'zzzRichText2Obj:', zzzRichText2Obj);
+    console.log( 'zzzRichText3Obj:', zzzRichText3Obj);
+
+    let zzzRichText1 = null;
+    let zzzRichText2 = null;
+    let zzzRichText3 = null;
+
+    //This will get rid of all the escaped characters in the summary (since it's all numbers)
+    // let zzzRichText3 = ''; //JSON.stringify( fetchInfo.summary ).replace('\\','');
+    //This will get rid of the leading and trailing quotes which have to be removed to make it real json object
+    // zzzRichText3 = zzzRichText3.slice(1, zzzRichText3.length - 1);
+
+    if ( zzzRichText1Obj ) { zzzRichText1 = JSON.stringify( zzzRichText1Obj ); }
+    if ( zzzRichText2Obj ) { zzzRichText2 = JSON.stringify( zzzRichText2Obj ); }
+    if ( zzzRichText3Obj ) { zzzRichText3 = JSON.stringify( zzzRichText3Obj ); }
+
+    console.log('zzzRichText1 length:', zzzRichText1 ? zzzRichText1.length : 0 );
+    console.log('zzzRichText2 length:', zzzRichText2 ? zzzRichText2.length : 0 );
+    console.log('zzzRichText3 length:', zzzRichText3 ? zzzRichText3.length : 0 );
+
+    // let FPSProps = null;
+    // let FPSPropsObj = buildFPSAnalyticsProps( this.properties, this.wpInstanceID, this.context.pageContext.web.serverRelativeUrl );
+    // FPSProps = JSON.stringify( FPSPropsObj );
+
+    let saveObject: IZSentAnalytics = {
+      loadProperties: loadProperties,
+
+      Title: Title,  //General Label used to identify what analytics you are saving:  such as Web Permissions or List Permissions.
+
+      Result: Result,  //Success or Error
+
+      zzzText1: `${ item.FileLeafRef }`,
+      zzzText2: `${ this.lastComment }`,
+      zzzText3: `${ this.state.copyProps.sourcePickedWeb.url }`,
+
+      zzzText4: `${ this.state.copyProps.destPickedWeb.url }`,
+      zzzText5: `${ this.state.copyProps.sourceLib }`,
+
+      zzzText6: `${ item.FileLeafRef }`,
+      // zzzText7: `${  }}`,
+
+      //Info1 in some webparts.  Simple category defining results.   Like Unique / Inherited / Collection
+      // zzzText7: `${   this.properties.selectedProperties.join('; ') }`, //Info2 in some webparts.  Phrase describing important details such as "Time to check old Permissions: 86 snaps / 353ms"
+
+      zzzNumber1: item.ID,
+      // zzzNumber2: fetchInfo.regexTime,
+      // zzzNumber3: fetchInfo.Block.length,
+      // zzzNumber4: fetchInfo.Warn.length,
+      // zzzNumber5: fetchInfo.Verify.length,
+      // zzzNumber6: fetchInfo.Secure.length,
+      // zzzNumber7: fetchInfo.js.length,
+
+      zzzRichText1: zzzRichText1,  //Used to store JSON objects for later use, will be stringified
+      zzzRichText2: zzzRichText2,
+      zzzRichText3: zzzRichText3,
+
+      // FPSProps: FPSProps,
+
+    };
+
+    saveAnalytics3( strings.analyticsWeb , `${strings.analyticsListLog}` , saveObject, true );
+
+    console.log('saved view info');
 
   }
 
