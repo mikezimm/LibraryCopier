@@ -55,6 +55,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     let side = textBox === 'dest' || textBox === 'source' ? 'left' : 'right' ;
     let padding = side === 'right' ? null: '0px' ;
     let width = side === 'right' ? '300px' : '700px' ;
+    let title = null;
 
     switch ( textBox  ) {
       case 'source':
@@ -80,13 +81,18 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       case 'FileLeafRef': case 'Title': case 'Description': case 'WikiField': case 'CanvaseContent1': case 'WebPart': case 'Modified':
         defValue = this.state.search[ textBox ];
         padding = '0px';
-        width = '200px';
+        width = '220px';
+        break;
+
+      case 'replaceString': case 'withString':
+        width = '50%';
+        title = 'Applies to EVERYTHING in page content including Urls & Links! ';
 
     }
 
     const ele =
-    <div className = { styles.textBoxFlexContent } style={{ padding: padding, width: width, height: errors.length > 0 ? null : '64px' }}>
-      <div className={ styles.textBoxLabel }>{ `${textBox.charAt(0).toUpperCase() + textBox.substr(1).toLowerCase()}` }</div>
+    <div title={ title } className = { styles.textBoxFlexContent } style={{ padding: padding, width: width, height: errors.length > 0 ? null : '64px' }}>
+      <div className={ styles.textBoxLabel }>{ `${textBox.charAt(0).toUpperCase() + textBox.substr(1)}` }</div>
       <TextField
         className={ styles.textField }
         styles={ this.getWebBoxStyles  } //this.getReportingStyles
@@ -135,6 +141,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
       pages: [],
       filtered: [],
+      skips: [],
       status: [],
 
       sourceError: [],
@@ -149,6 +156,9 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
       search: clearSearchState(),
 
+      showReplace: false,
+      showFilters: false,
+
       copyProps: {
         user: this.props.pageContext.user.displayName,
         getSource: true,
@@ -156,6 +166,8 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
         existing: 'skip',
         confirm: 'each',
         updateWiki: false,
+        replaceString: '',
+        withString: '',
 
         sourcePickedWeb: null,
         destPickedWeb: null,
@@ -189,8 +201,10 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
    //updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results } )
    //updateProgress( 'Page Copy', result, item, { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps } )
    private async updateProgress( latest: any, item: IAnyContent, result: string, progressComment: string ) {
-     this.setState({  status: latest , progressComment: progressComment });
+
+     this.setState({  status: latest , progressComment: progressComment, skips: latest.skips, filtered: latest.filtered });
      this.saveLoadAnalytics( 'Page Copy', result, item, latest.copyProps,  );
+
    }
 
   //  private async updateProgress( latest: any ) {
@@ -259,9 +273,11 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) );
     copyProps.getSource = true;
     copyProps.doUpdates = true;
-    copyProps.existing = 'skip';
+    copyProps.existing = 'overWrite';
 
     let updateBucketsNow: boolean = false;
+
+    this.setState({ skips: [],  });
 
     let results = await getClassicContent( copyProps, this.updateProgress.bind( this ), this.state.search );
 
@@ -269,13 +285,15 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
    }
 
-   public async startReplaceAction ( ) {
-    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) );
+   public async startCreateAction ( ) {
+    let copyProps: ICreateThesePages = JSON.parse( JSON.stringify( this.state.copyProps ) );
     copyProps.getSource = true;
     copyProps.doUpdates = true;
-    copyProps.existing = 'overWrite';
+    copyProps.existing = 'skip';
 
     let updateBucketsNow: boolean = false;
+
+    this.setState({ skips: [],  });
 
     let results = await getClassicContent( copyProps, this.updateProgress.bind( this ), this.state.search );
 
@@ -309,6 +327,9 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     let sourceLib = this.createWebInput('library');
     let comment = this.createWebInput('comment');
 
+    let replaceString = this.createWebInput('replaceString');
+    let withString = this.createWebInput('withString');
+
     let searchBoxs = validSearchLocations.map( location => {
       return this.createWebInput( location );
     });
@@ -318,28 +339,41 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     </div>;
 
     const updateButton =<div className={ styles.normalButton } onClick={ this.startUpdateAction.bind( this )}>
-      Update pages
+      Update these pages
     </div>;
 
-    const replaceButton =<div className={ styles.normalButton } onClick={ this.startReplaceAction.bind( this )}>
-      Replace pages
+    const replaceButton =<div className={ styles.normalButton } onClick={ this.startCreateAction.bind( this )}>
+      Create non-existing ones
     </div>;
 
-    const currentProgress =<div className={ '' } style={ { padding: '10px', height: '30px', fontSize: 'larger', fontWeight: 600 } }>
+    const currentProgress = !this.state.progressComment ? null : <div className={ '' } style={ { padding: '10px', height: '30px', fontSize: 'larger', fontWeight: 600 } }>
       { this.state.progressComment }
     </div>;
 
     const pageList = <div className={ styles.filteredPages }>
-      <div className={ styles.textBoxLabel } style={{ paddingBottom: '10px' }}>Filtered Pages</div>
+      <div className={ styles.textBoxLabel } style={{ paddingBottom: '10px' }}>Filtered Pages - { this.state.filtered.length }</div>
       {
         this.state.filtered.map( item => {
+          let filteredClass = item.filteredClass === '.created' ? styles.created : item.filteredClass === '.skipped' ? styles.skipped : item.filteredClass === '.updated' ? styles.updated : null;
+          return <div className={ [ filteredClass, styles.filteredPage ].join(' ') }onClick={() => { window.open( item.FileRef , '_blank' ) ; }}> { item.FileLeafRef } </div>;
+        })
+      }
+    </div>;
+
+    const skipList = <div className={ styles.filteredPages }>
+      <div className={ styles.textBoxLabel } style={{ paddingBottom: '10px' }}>Skipped Pages ( already existed) - { this.state.skips.length }</div>
+      {
+        this.state.skips.map( item => {
           return <div className={ styles.filteredPage }onClick={() => { window.open( item.FileRef , '_blank' ) ; }}> { item.FileLeafRef } </div>;
         })
       }
     </div>;
 
+    const filteredUrls = this.state.filtered.map( ( item: IAnyContent ) => { return item.FileLeafRef ; });
+
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
+        <h2>Modernize Classic Site Pages</h2>
         <div className={ null }>
           <div className={ styles.textControlsBox } style={{ }}>
             <div className={ styles.sourceInfo}>
@@ -350,9 +384,14 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
               { destUrl }
               { comment }
             </div>
-            <div className={ styles.textBoxLabel }>Filter Properties</div>
-            <div className={ styles.sourceInfo}>
+            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleFilters.bind(this)} >Filter Properties - NOT case sensitive</div>
+            <div className={ [ styles.replaceInfo, this.state.showFilters === false ? styles.hideInfo : null ].join( ' ') }>
               { searchBoxs }
+            </div>
+            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleReplace.bind(this)} >Replace string in all content - Case Sensitive</div>
+            <div className={ [ styles.replaceInfo, this.state.showReplace === false ? styles.hideInfo : null ].join( ' ') }>
+              { replaceString }
+              { withString }
             </div>
           </div>
 
@@ -363,7 +402,12 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
           </div>
 
           { currentProgress }
-          { pageList }
+          <div style={{ display: 'flex' }}>
+            { pageList }
+            { skipList }
+          </div>
+
+          <ReactJson src={ filteredUrls } name={ 'Filtered Page Urls' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
           <ReactJson src={ this.state.filtered } name={ 'Filtered Pages' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
           <ReactJson src={ this.state.pages } name={ 'Source Pages' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
           <ReactJson src={ this.state.status } name={ 'Updates' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
@@ -508,6 +552,15 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
   }
 
+  private _toggleReplace() {
+    let newState = this.state.showReplace === true ? false : true;
+    this.setState({ showReplace: newState });
+  }
+
+  private _toggleFilters() {
+    let newState = this.state.showFilters === true ? false : true;
+    this.setState({ showFilters: newState });
+  }
 /***
  *     .d8b.  d8b   db  .d8b.  db      db    db d888888b d888888b  .o88b. .d8888. 
  *    d8' `8b 888o  88 d8' `8b 88      `8b  d8' `~~88~~'   `88'   d8P  Y8 88'  YP 

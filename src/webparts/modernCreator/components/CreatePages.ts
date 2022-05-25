@@ -24,6 +24,7 @@ import { SourceInfo, thisSelect, SearchTypes } from './DataInterface';
 import { getExpandColumns, getKeysLike, getSelectColumns } from '@mikezimm/npmfunctions/dist/Lists/getFunctions';
 import { warnMutuallyExclusive } from 'office-ui-fabric-react';
 
+import { sortObjectArrayByStringKey } from '@mikezimm/npmfunctions/dist/Services/Arrays/sorting';
 import { getHelpfullErrorV2 } from '@mikezimm/npmfunctions/dist/Services/Logging/ErrorHandler';
 import { IAnyContent, ICreateThesePages, ISearchState } from './IModernCreatorProps';
 import { divide } from 'lodash';
@@ -103,12 +104,14 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
   const destProps = copyProps.destPickedWeb;
 
   let results: any[] = [];
-  let filtered: any[] = [];
+  let filtered: IAnyContent[] = items;
   let complete: any[] = [];
   let fails: any[] = [];
   let links: any[] = [];
   let images: any[] = [];
   let skips: any[] = [];
+
+
 
   const destWeb = Web( `${window.location.origin}${destProps.ServerRelativeUrl}` );
 
@@ -116,9 +119,9 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
   console.log('partDefs:', partDefs);
   const partDef = partDefs.filter(c => c.Name === "FPS Page Info - TOC & Props");
 
-  for (var i = 0; i < items.length; i++ ) {
+  for ( var i = 0; i < items.length; i++ ) {
 
-      if ( i < 1 ) {
+      if ( i < 200 ) {
 
           let item = items[i];
           let result = 'TBD';
@@ -148,152 +151,159 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
           let comments = [];
 
           if ( item.meetsSearch === false ) {
+            //Skipping because it does not meet search
 
+          } else if ( destExists === true && copyProps.existing === 'skip' ) {
+            //Skipping this item because it already exists.
+            item.filteredClass = '.skipped';
+            skips.push( item );
+            // filtered.push( item );
 
           } else {
-              const maps = [ 3,2,1];
-              maps.map( idx => {
+            const maps = [ 3,2,1];
+            maps.map( idx => {
 
-                let replaceIdx = idx + 1;
-                if ( currentWikiField.indexOf(`<h${idx}>`) > -1 ) {
-                  let finds = [];
-                  let splits = newWikiField.split(`<h${idx}>`).map( find=> {
-                    if ( find.length > 0 ) { finds.push( find.substring(0, 20 )) ; }
-                    return find;
-                  });
-                  update[`<h${idx}`] = finds;
-                  newWikiField = splits.join(`<h${replaceIdx}>`).split(`</h${idx}>`).join(`</h${replaceIdx}>`);
-                }
+              let replaceIdx = idx + 1;
+              if ( currentWikiField.indexOf(`<h${idx}>`) > -1 ) {
+                let finds = [];
+                let splits = newWikiField.split(`<h${idx}>`).map( find=> {
+                  if ( find.length > 0 ) { finds.push( find.substring(0, 20 )) ; }
+                  return find;
+                });
+                update[`<h${idx}`] = finds;
+                newWikiField = splits.join(`<h${replaceIdx}>`).split(`</h${idx}>`).join(`</h${replaceIdx}>`);
+              }
 
+            });
+
+            let sourceWebUrl = copyProps.sourcePickedWeb.ServerRelativeUrl.toLowerCase();
+            let destWebUrl = copyProps.destPickedWeb.ServerRelativeUrl;
+
+            let sourceLibraryUrl = `${sourceWebUrl}/${copyProps.sourceLib}/` ;
+            let destLibraryUrl = destWebUrl + '/SitePages/' ;
+
+            update.links = newWikiField.toLowerCase().split( sourceWebUrl ).length - 1;
+            if ( update.links > 0 ) {
+              console.log('found links:' , update.links, item, );
+            }
+            if ( update.links > 0  ) { links.push( item.FileLeafRef ) ; }
+
+
+            //Replace all urls with new links
+            //https://autoliv.sharepoint.com/sites//FinanceManual/Manual//StandardDocuments/Transaction%20exposure%20reporting%20instruction.aspx
+
+            const regexFind = new RegExp( `${sourceLibraryUrl}`, 'gi' );
+            newWikiField = newWikiField.replace( regexFind, destLibraryUrl );
+
+            const imageSplits = newWikiField.split('<img');
+
+            if ( imageSplits.length > 1 ) { 
+              images.push( item.FileLeafRef );
+              update.images ++;
+            }
+
+            item.links = update.links;
+            item.images = update.images;
+            item.h1 = update.h1.length;
+            item.h2 = update.h2.length;
+            item.h3 = update.h3.length;
+
+            // if ( currentWikiField.indexOf('<h3>') > -1 ) {
+            //   let finds = [];
+            //   let splits = newWikiField.split('<h3>').map( find=> {
+            //     if ( find.length > 0 ) { finds.push( find.substring(0, 20 )) ; }
+            //   });
+            //   updates.h3 = finds;
+            //   newWikiField = splits.join('<h4>').split('</h3>').join('</h4>');
+            // }
+
+            let page: IClientsidePage = null;
+
+            if ( destExists === true ) {
+
+              page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath( `${ copyProps.destPickedWeb.ServerRelativeUrl}/SitePages/${dashFileName}` ));
+              await page.load();
+              let removedCount = 0;
+              page.sections.map( section => {
+                section.remove();
+                removedCount ++;
               });
 
-              let sourceWebUrl = copyProps.sourcePickedWeb.ServerRelativeUrl.toLowerCase();
-              let destWebUrl = copyProps.destPickedWeb.ServerRelativeUrl;
-
-              let sourceLibraryUrl = `${sourceWebUrl}/${copyProps.sourceLib}/` ;
-              let destLibraryUrl = destWebUrl + '/SitePages/' ;
-
-              update.links = newWikiField.toLowerCase().split( sourceWebUrl ).length - 1;
-              if ( update.links > 0 ) {
-                console.log('found links:' , update.links, item, );
-              }
-              if ( update.links > 0  ) { links.push( item.FileLeafRef ) ; }
-
-
-              //Replace all urls with new links
-              //https://autoliv.sharepoint.com/sites//FinanceManual/Manual//StandardDocuments/Transaction%20exposure%20reporting%20instruction.aspx
-              
-              const regexFind = new RegExp( `${sourceLibraryUrl}`, 'gi' );
-              newWikiField = newWikiField.replace( regexFind, destLibraryUrl );
-
-              const imageSplits = newWikiField.split('<img');
-
-              if ( imageSplits.length > 1 ) { 
-                images.push( item.FileLeafRef );
-                update.images ++;
-              }
-
-              item.links = update.links;
-              item.images = update.images;
-              item.h1 = update.h1.length;
-              item.h2 = update.h2.length;
-              item.h3 = update.h3.length;
-
-              // if ( currentWikiField.indexOf('<h3>') > -1 ) {
-              //   let finds = [];
-              //   let splits = newWikiField.split('<h3>').map( find=> {
-              //     if ( find.length > 0 ) { finds.push( find.substring(0, 20 )) ; }
-              //   });
-              //   updates.h3 = finds;
-              //   newWikiField = splits.join('<h4>').split('</h3>').join('</h4>');
-              // }
-              let page: IClientsidePage = null;
-
-              if ( destExists === true ) {
-
-                page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath( `${ copyProps.destPickedWeb.ServerRelativeUrl}/SitePages/${dashFileName}` ));
-                await page.load();
-                let removedCount = 0;
-                page.sections.map( section => {
-                  section.remove();
-                  removedCount ++;
-                });
-
-                if ( removedCount > 0 ) {
-                  result = 'Replaced Sections - ' + removedCount;
-
-                } else {
-                  result = 'Added new sections - ';
-
-                }
-
+              if ( removedCount > 0 ) {
+                result = 'Replaced Sections - ' + removedCount;
 
               } else {
-                page = await CreateClientsidePage( destWeb , item.FileLeafRef.replace('.aspx',''), title );
-                result = 'Created page';
+                result = 'Added new sections - ';
 
               }
+              item.filteredClass = '.updated';
 
-              // const page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath(`/sites/FinanceManual/TestContentCopy/sitepages/${dashFileName}`));
+            } else {
+              page = await CreateClientsidePage( destWeb , item.FileLeafRef.replace('.aspx',''), title );
+              result = 'Created page';
+              item.filteredClass = '.created';
+            }
 
-              console.log('created page3', page);
+            // const page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath(`/sites/FinanceManual/TestContentCopy/sitepages/${dashFileName}`));
 
-              // add two columns with factor 6 - this is a two column layout as the total factor in a section should add up to 12
+            console.log('created page3', page);
 
-              const part = ClientsideWebpart.fromComponentDef(partDef[0]);
-              console.log('part:', part);
-            
-              part.setProperties<any>( FPSPageInfoDefaults );
+            // add two columns with factor 6 - this is a two column layout as the total factor in a section should add up to 12
 
-              try {
-                const section1 = page.addSection().addControl( part );
-                update.sections.push( 'Added sectionL FPS Page Info');
-              } catch {
-                comments.push('FAILED sectionL FPS Page Info');
-                update.sections.push( 'FAILED sectionL FPS Page Info');
-              }
+            const part = ClientsideWebpart.fromComponentDef(partDef[0]);
+            console.log('part:', part);
+          
+            part.setProperties<any>( FPSPageInfoDefaults );
 
-              try {
-                const section2 = page.addSection().addControl(new ClientsideText(newWikiField));
-                update.sections.push( 'Added sectionL Text Content');
-              } catch {
-                comments.push('FAILED sectionL Text Content');
-                update.sections.push( 'FAILED sectionL Text Content');
-              }
+            try {
+              const section1 = page.addSection().addControl( part );
+              update.sections.push( 'Added sectionL FPS Page Info');
+            } catch {
+              comments.push('FAILED sectionL FPS Page Info');
+              update.sections.push( 'FAILED sectionL FPS Page Info');
+            }
 
-              try {
+            try {
+              const section2 = page.addSection().addControl(new ClientsideText(newWikiField));
+              update.sections.push( 'Added sectionL Text Content');
+            } catch {
+              comments.push('FAILED sectionL Text Content');
+              update.sections.push( 'FAILED sectionL Text Content');
+            }
 
-                let rightNow = new Date();
-                // <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
-                // <div>Copied from <a onclick={window.open(item.FileRef, "_blank")}href="${ item.FileRef }">${item.FileRef}</a></div>
-                const logHTML = `<div>
-                  
-                  <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
-                  <div>via script at: ${ rightNow.toUTCString() }</div>
-                  <div>Result: ${ result }</div>
-                  <div>Links update: ${ update.links }</div>
-                  <div>Images found: ${ update.images }</div>
-                  <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
-                </div>`;
+            try {
 
-                const section3 = page.addSection().addControl(new ClientsideText( logHTML ));
-                update.sections.push( 'Added script log section');
+              let rightNow = new Date();
+              // <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
+              // <div>Copied from <a onclick={window.open(item.FileRef, "_blank")}href="${ item.FileRef }">${item.FileRef}</a></div>
+              const logHTML = `<div>
+                
+                <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
+                <div>via script at: ${ rightNow.toUTCString() }</div>
+                <div>Result: ${ result }</div>
+                <div>Links update: ${ update.links }</div>
+                <div>Images found: ${ update.images }</div>
+                <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
+              </div>`;
 
-              } catch {
-                comments.push('FAILED script log Content');
-                update.sections.push( 'FAILED script log section');
-              }
+              const section3 = page.addSection().addControl(new ClientsideText( logHTML ));
+              update.sections.push( 'Added script log section');
 
-              try {
-                await page.save();
-                update.saved = true;
+            } catch {
+              comments.push('FAILED script log Content');
+              update.sections.push( 'FAILED script log section');
+            }
 
-              } catch(e) {
-                comments.push('FAILED SAVE');
-              }
+            try {
+              await page.save();
+              update.saved = true;
 
-              filtered.push( item );
-            } //End Meets search
+            } catch(e) {
+              comments.push('FAILED SAVE');
+            }
+
+            // filtered.push( item );
+          } //End Meets search
 
           update.comments = comments.join('; ');
           results.push( update );
@@ -312,7 +322,8 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
           //updateProgress( latest: any, copyProps: ICreateThesePages, item: IAnyContent, result: string )
           let itemCount = i + 1;
           let path = item.meetsSearch !== true ? ' -- Did not meet Search criteria' : '';
-          setTimeout(() => updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps }, item, result, `${ itemCount } of ${items.length} : ${ item.FileLeafRef}${ path }`  ) , 100 );
+          updateProgress( { fails: fails, complete: complete, filtered: filtered, links: links, skips: skips, images: images, results: results, item: item, copyProps: copyProps }, item, item.result, `${ itemCount } of ${items.length} : ${ item.FileLeafRef}${ path }`  );
+          // setTimeout(() => updateProgress( { fails: fails, complete: complete, filtered: filtered, links: links, skips: skips, images: images, results: results, item: item, copyProps: copyProps }, item, item.result, `${ itemCount } of ${items.length} : ${ item.FileLeafRef}${ path }`  ) , 2 );
           // updateProgress( { name: item.FileLeafRef , title: title, } );
           
         }//end all items
@@ -337,8 +348,8 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
     //itemFetchCol
     //let selectThese = '*,WikiField,FileRef,FileLeafRef,' + selColumns.join(",");
     let selectThese = [ baseSelectColumns, ...selColumns, ...['WikiField'] ].join(",");
-    let items = [];
-    let filtered = [];
+    let items: IAnyContent[] = [];
+    let filtered: IAnyContent[] = [];
 
     console.log('sourceProps', sourceProps );
     let errMess = null;
@@ -352,8 +363,11 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
     }
 
+    items = sortObjectArrayByStringKey( items, 'asc', 'FileLeafRef' );
+    
     items.map( item => {
       item.meetsSearch = pagePassesSearch( item, search );
+      item.filteredClass = '.tbd';
       if ( item.meetsSearch === true ) { filtered.push( item ) ; }
     });
 
@@ -361,7 +375,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
     // createMirrorPage( items, updateProgress ) ;
     if ( copyProps.doUpdates === true ) {
-      updateMirrorPage( copyProps, items, updateProgress, search ) ;
+      updateMirrorPage( copyProps, filtered, updateProgress, search ) ;
 
     } else {
       //Just return the items

@@ -51,6 +51,9 @@ export interface ICreateThesePages {
   confirm: 'all' | 'each';
   updateWiki: boolean;
 
+  replaceString: string;
+  withString: string;
+
   options: IModernCreateOptions;
 
   filter: {
@@ -80,9 +83,12 @@ export function clearSearchState() {
 export type ISourceOrDest = 'source' | 'dest' ;
 
 export type ISearchLocations = 'FileLeafRef' | 'Title' | 'Description' | 'WikiField' | 'CanvaseContent1' | 'WebPart' | 'Modified' ;
-export const validSearchLocations: ISearchLocations[] = [ 'FileLeafRef', 'Title', 'Description', 'WikiField', 'CanvaseContent1', 'WebPart', 'Modified' ];
 
-export type IAllTextBoxTypes = ISourceOrDest | 'library' | 'comment' | ISearchLocations ;
+// export const validSearchLocations: ISearchLocations[] = [ 'FileLeafRef', 'Title', 'Description', 'WikiField', 'CanvaseContent1', 'WebPart', 'Modified' ];
+export const validSearchLocations: ISearchLocations[] = [ 'FileLeafRef', 'Title', 'Description', 'WikiField', 'Modified' ];
+
+
+export type IAllTextBoxTypes = ISourceOrDest | 'library' | 'comment' | ISearchLocations | 'replaceString' | 'withString' ;
 
 /**
  * NOTE:  Keys of ISearchState should match ISearchLocations
@@ -109,7 +115,11 @@ export interface IModernCreatorState {
 
   pages: IAnyContent[];
   filtered: IAnyContent[];
+  skips: IAnyContent[];
   status: any;
+
+  showReplace: boolean;
+  showFilters: boolean;
 
   search: ISearchState;
 
@@ -147,9 +157,14 @@ export interface IAnyContent extends Partial<any> {
   // searchDesc: any;
   // searchHref: string;
 
+  filteredClass: '.tbd' | '.created' | '.updated' | '.skipped' ;
+
   search: ISearchState;
   meetsSearch: boolean;
   mirrorExisted: boolean;
+
+  FileLeafRef: string;
+  FileRef: string;
 
   descIsHTML: boolean;
   meta: string[];

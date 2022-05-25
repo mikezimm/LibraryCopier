@@ -58,8 +58,30 @@
   display: flex;
   flex-direction: row;
   padding: 10px 20px 5px 20px;
+  transition:all 0.4s ease;
+  height: auto;
+  opacity: 1;
   // width: 100%;
   // background: lightgray;
+
+}
+
+
+.replaceInfo{
+  display: flex;
+  flex-direction: row;
+  padding: 10px 20px 5px 20px;
+  transition:all 0.4s ease;
+  height: 70px;
+  opacity: 1;
+  // width: 100%;
+  // background: lightgray;
+
+}
+.hideInfo{
+  opacity: 0;
+  height: 0px;
+  overflow: hidden;
 
 }
 
@@ -83,6 +105,14 @@
   font-size: larger;
   font-weight: bolder;
 }
+
+.accordion {
+  padding-left: 20px;
+  padding-top: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
 
 //Warning
 .textBoxErrorTitle {
@@ -119,6 +149,21 @@
 
 .filteredPages {
   padding: 20px 30px 20px 40px;
+
+  .updated {
+    font-weight: bolder;
+    color: darkgreen;
+  }
+
+  .created {
+    font-weight: bolder;
+    color: darkblue;
+  }
+
+  .skipped {
+    font-weight: bolder;
+    color: darkred;
+  }
 }
 
 .filteredPage {
