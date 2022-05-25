@@ -60,6 +60,44 @@ export interface ICreateThesePages {
 
 }
 
+export function clearSearchState() {
+  const searchState: ISearchState = {
+    FileLeafRef: '',
+    Title: '',
+    Description: '',
+    WikiField: '',
+    CanvaseContent1: '',
+    WebPart: '',
+    Modified: null,
+    Editor: null,
+  };
+
+  return searchState;
+
+}
+
+
+export type ISourceOrDest = 'source' | 'dest' ;
+
+export type ISearchLocations = 'FileLeafRef' | 'Title' | 'Description' | 'WikiField' | 'CanvaseContent1' | 'WebPart' | 'Modified' ;
+export const validSearchLocations: ISearchLocations[] = [ 'FileLeafRef', 'Title', 'Description', 'WikiField', 'CanvaseContent1', 'WebPart', 'Modified' ];
+
+export type IAllTextBoxTypes = ISourceOrDest | 'library' | 'comment' | ISearchLocations ;
+
+/**
+ * NOTE:  Keys of ISearchState should match ISearchLocations
+ */
+export interface ISearchState {
+  FileLeafRef: string;
+  Title: string;
+  Description: string;
+  WikiField: string;
+  CanvaseContent1: string;
+  WebPart: string;
+  Modified: any;
+  Editor: any;
+}
+
 export interface IModernCreatorState {
   sourceWeb: string;
   destWeb: string;
@@ -70,7 +108,10 @@ export interface IModernCreatorState {
   destWebValid: boolean;
 
   pages: IAnyContent[];
+  filtered: IAnyContent[];
   status: any;
+
+  search: ISearchState;
 
   progressComment: string;
 
@@ -89,23 +130,26 @@ export interface IModernCreatorState {
 
   isCurrentWeb: boolean;
 
-
 }
 
 export interface IAnyContent extends Partial<any> {
-  format: IAppFormat; //This represents the key of the SourceType
-  searchText: string;
-  searchTextLC: string;
-  leftSearch: string[]; //For easy display of casing
-  leftSearchLC: string[]; //For easy string compare
-  topSearch: string[]; //For easy display of casing
-  topSearchLC: string[]; //For easy string compare
-  type: string;
-  typeIdx: number;
+  // format: IAppFormat; //This represents the key of the SourceType
+  // searchText: string;
+  // searchTextLC: string;
+  // leftSearch: string[]; //For easy display of casing
+  // leftSearchLC: string[]; //For easy string compare
+  // topSearch: string[]; //For easy display of casing
+  // topSearchLC: string[]; //For easy string compare
+  // type: string;
+  // typeIdx: number;
 
-  searchTitle: any;
-  searchDesc: any;
-  searchHref: string;
+  // searchTitle: any;
+  // searchDesc: any;
+  // searchHref: string;
+
+  search: ISearchState;
+  meetsSearch: boolean;
+  mirrorExisted: boolean;
 
   descIsHTML: boolean;
   meta: string[];

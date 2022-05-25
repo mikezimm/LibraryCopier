@@ -2,7 +2,7 @@
 
 .modernCreator {
   overflow: hidden;
-  padding: 1em;
+  // padding: 1em;
   color: "[theme:bodyText, default: #323130]";
   color: var(--bodyText);
   &.teams {
@@ -33,6 +33,11 @@
   }
 }
 
+.textControlsBox {
+  padding-bottom: 10px;
+  background: lightgray;
+}
+
 .normalButton {
   transition: all, .3s ease;
   cursor: pointer;
@@ -52,7 +57,7 @@
 .sourceInfo{
   display: flex;
   flex-direction: row;
-  padding: 10px 20px 20px 20px;
+  padding: 10px 20px 5px 20px;
   // width: 100%;
   // background: lightgray;
 
@@ -67,7 +72,8 @@
 .textBoxFlexContent{
   display: flex;
   flex-direction: column;
-  padding: 10px 20px 20px 20px;
+  // padding: 10px 20px 20px 20px;
+  padding: 0px;
   // width: 100%;
   // background: lightgray;
 
@@ -108,4 +114,15 @@
     min-width: 200px;
     font-size: larger;
   }
+
+}
+
+.filteredPages {
+  padding: 20px 30px 20px 40px;
+}
+
+.filteredPage {
+  padding-bottom: 10px;
+  font-size: larger;
+  cursor: pointer;
 }

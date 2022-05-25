@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styles from './ModernCreator.module.scss';
-import { IAnyContent, ICreateThesePages, IModernCreatorProps, IModernCreatorState } from './IModernCreatorProps';
+import { clearSearchState, IAllTextBoxTypes, IAnyContent, ICreateThesePages, IModernCreatorProps, IModernCreatorState, ISearchLocations, ISearchState, ISourceOrDest, validSearchLocations } from './IModernCreatorProps';
 import { sp, Views, IViews, ISite } from "@pnp/sp/presets/all";
 
 import { Label, ILabelStyles } from 'office-ui-fabric-react/lib/Label';
@@ -25,15 +25,14 @@ import { IZLoadAnalytics, IZSentAnalytics, } from '@mikezimm/npmfunctions/dist/S
 
 import { getSiteInfo, getWebInfoIncludingUnique } from '@mikezimm/npmfunctions/dist/Services/Sites/getSiteInfo';
 
-import { createMirrorPage, getClassicContent, updateMirrorPage, _LinkIsValid } from './CreatePages';
+import { createMirrorPage, getClassicContent, pagePassesSearch, updateMirrorPage, _LinkIsValid } from './CreatePages';
 import { SourceInfo } from './DataInterface';
 
 import * as strings from 'ModernCreatorWebPartStrings';
 import { DisplayMode } from '@microsoft/sp-core-library';
+import { filter } from 'lodash';
 
 export const BaseErrorTrace = `ModernCreator|${ strings.analyticsWeb }|${ strings.analyticsList }`;
-
-export type ISourceOrDest = 'source' | 'dest' ;
 
 export default class ModernCreator extends React.Component<IModernCreatorProps, IModernCreatorState> {
 
@@ -48,37 +47,53 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     return { fieldGroup: [ { width: '75%', maxWidth: '600px' }, { borderColor: 'lightgray', }, ], };
   }
 
-  private createWebInput( sourceOrDest: ISourceOrDest | 'library' | 'comment' ) {
+  private createWebInput( textBox: IAllTextBoxTypes ) {
 
     let errors = [];
     let defValue = '';
 
-    if ( sourceOrDest === 'source' ) {
-      errors = this.state.sourceError;
-      defValue = this.state.sourceWeb;
+    let side = textBox === 'dest' || textBox === 'source' ? 'left' : 'right' ;
+    let padding = side === 'right' ? null: '0px' ;
+    let width = side === 'right' ? '300px' : '700px' ;
 
-    } else if ( sourceOrDest === 'dest' ) {
-      errors = this.state.destError;
-      defValue = this.state.destWeb;
+    switch ( textBox  ) {
+      case 'source':
+        errors = this.state.sourceError;
+        defValue = this.state.sourceWeb;
+        break;
 
-    } else  if ( sourceOrDest === 'library' ) {
-      errors = this.state.libError;
-      defValue = this.state.copyProps.sourceLib;
+      case 'dest':
+        errors = this.state.destError;
+        defValue = this.state.destWeb;
+        break;
 
-    } else { defValue = this.state.comment; }
+      case 'library':
+        errors = this.state.libError;
+        defValue = this.state.copyProps.sourceLib;
+        break;
 
-    const side = sourceOrDest === 'dest' || sourceOrDest === 'source' ? 'left' : 'right' ;
-    const padding = side === 'right' ? null: '0px' ;
-    const width = side === 'right' ? '300px' : '700px' ;
+      case 'comment': 
+        defValue = this.state.comment;
+        break;
+
+      //Must match ISearchLocations exactly
+      case 'FileLeafRef': case 'Title': case 'Description': case 'WikiField': case 'CanvaseContent1': case 'WebPart': case 'Modified':
+        defValue = this.state.search[ textBox ];
+        padding = '0px';
+        width = '200px';
+
+    }
+
     const ele =
-    <div className = { styles.textBoxFlexContent } style={{ padding: padding, width: width }}>
-      <div className={ styles.textBoxLabel }>{ `${sourceOrDest.charAt(0).toUpperCase() + sourceOrDest.substr(1).toLowerCase()}` }</div>
+    <div className = { styles.textBoxFlexContent } style={{ padding: padding, width: width, height: errors.length > 0 ? null : '64px' }}>
+      <div className={ styles.textBoxLabel }>{ `${textBox.charAt(0).toUpperCase() + textBox.substr(1).toLowerCase()}` }</div>
       <TextField
         className={ styles.textField }
         styles={ this.getWebBoxStyles  } //this.getReportingStyles
         defaultValue={ defValue }
         autoComplete='off'
-        onChange={ sourceOrDest === 'comment' ? this.commentChange.bind( this ) : sourceOrDest === 'library' ? this.onLibChange.bind( this ) : this._onWebUrlChange.bind( this, sourceOrDest, ) }
+        // onChange={ sourceOrDest === 'comment' ? this.commentChange.bind( this ) : sourceOrDest === 'library' ? this.onLibChange.bind( this ) : this._onWebUrlChange.bind( this, sourceOrDest, ) }
+        onChange={ this.textFieldChange.bind( this, textBox ) }
         validateOnFocusIn
         validateOnFocusOut
         multiline= { false }
@@ -119,6 +134,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       destSite: null,
 
       pages: [],
+      filtered: [],
       status: [],
 
       sourceError: [],
@@ -130,6 +146,8 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       destWebValid: false,
 
       progressComment: '',
+
+      search: clearSearchState(),
 
       copyProps: {
         user: this.props.pageContext.user.displayName,
@@ -231,8 +249,9 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     let updateBucketsNow: boolean = false;
 
-    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ) );
-    this.setState({ pages: results.items, copyProps: copyProps  });
+    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ), this.state.search );
+
+    this.setState({ pages: results.items, copyProps: copyProps, filtered: results.filtered,    });
 
    }
 
@@ -244,8 +263,9 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     let updateBucketsNow: boolean = false;
 
-    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ) );
-    this.setState({ pages: results.items, copyProps: copyProps  });
+    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ), this.state.search );
+
+    this.setState({ pages: results.items, copyProps: copyProps, filtered: results.filtered,  });
 
    }
 
@@ -257,8 +277,9 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     let updateBucketsNow: boolean = false;
 
-    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ) );
-    this.setState({ pages: results.items, copyProps: copyProps  });
+    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ), this.state.search );
+
+    this.setState({ pages: results.items, copyProps: copyProps, filtered: results.filtered,  });
 
    }
 
@@ -288,6 +309,10 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     let sourceLib = this.createWebInput('library');
     let comment = this.createWebInput('comment');
 
+    let searchBoxs = validSearchLocations.map( location => {
+      return this.createWebInput( location );
+    });
+
     const fetchButton =<div className={ styles.normalButton } onClick={ this.startGetAction.bind( this )}>
       Get Source pages
     </div>;
@@ -304,10 +329,19 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       { this.state.progressComment }
     </div>;
 
+    const pageList = <div className={ styles.filteredPages }>
+      <div className={ styles.textBoxLabel } style={{ paddingBottom: '10px' }}>Filtered Pages</div>
+      {
+        this.state.filtered.map( item => {
+          return <div className={ styles.filteredPage }onClick={() => { window.open( item.FileRef , '_blank' ) ; }}> { item.FileLeafRef } </div>;
+        })
+      }
+    </div>;
+
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
         <div className={ null }>
-          <div style={{ background: 'lightgray' }}>
+          <div className={ styles.textControlsBox } style={{ }}>
             <div className={ styles.sourceInfo}>
               { sourceUrl }
               { sourceLib }
@@ -315,6 +349,10 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
             <div className={ styles.sourceInfo}>
               { destUrl }
               { comment }
+            </div>
+            <div className={ styles.textBoxLabel }>Filter Properties</div>
+            <div className={ styles.sourceInfo}>
+              { searchBoxs }
             </div>
           </div>
 
@@ -325,6 +363,8 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
           </div>
 
           { currentProgress }
+          { pageList }
+          <ReactJson src={ this.state.filtered } name={ 'Filtered Pages' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
           <ReactJson src={ this.state.pages } name={ 'Source Pages' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
           <ReactJson src={ this.state.status } name={ 'Updates' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
 
@@ -402,6 +442,42 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
   }
 
+  
+  
+  // onChange={ sourceOrDest === 'comment' ? this.commentChange.bind( this ) : sourceOrDest === 'library' ? this.onLibChange.bind( this ) : this._onWebUrlChange.bind( this, sourceOrDest, ) }
+
+  //Caller should be onClick={ this._clickLeft.bind( this, item )}
+  private textFieldChange( item: IAllTextBoxTypes, ev: any ) {
+    let newValue = ev.target.value;
+    let search: ISearchState = JSON.parse(JSON.stringify( this.state.search ));
+    search[ item ] = newValue;
+
+    if ( validSearchLocations.indexOf( item as any ) > -1 ) {
+      //This is search text box
+      const filtered = this.updatePageList( search, this.state.pages );
+      this.setState({ filtered: filtered, search: search });
+
+    } else if ( item === 'library') {
+      this.updateLibChange(newValue);
+
+    } else if ( item === 'dest' || item === 'source') {
+      this._onWebUrlChange( item, null, newValue );
+
+    } else if ( item === 'comment') {
+      this.commentChange(newValue);
+    }
+
+
+  }
+
+  private updatePageList ( search: ISearchState , pages: IAnyContent[]) {
+    let filtered: IAnyContent[] = [];
+    pages.map ( page => {
+      if ( pagePassesSearch( page, search ) ) { filtered.push( page ) ; }
+    });
+
+    return filtered;
+  }
 
   private async updateLibChange( value: string, ) {
 
@@ -426,8 +502,8 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
   }
 
 
-  private async commentChange( ev: any, ) {
-    this.lastComment = ev.target.value;
+  private async commentChange( value: string ) {
+    this.lastComment = value;
     this.setState({ comment: this.lastComment, });
 
   }
