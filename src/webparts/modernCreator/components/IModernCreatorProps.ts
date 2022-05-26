@@ -51,6 +51,18 @@ export interface ICreateThesePages {
   confirm: 'all' | 'each';
   updateWiki: boolean;
 
+  pivotTiles: {
+    add: boolean;
+    props: string;
+    section: 0 | 1 | 2 | 3 | 9;
+  };
+
+  pageInfo: {
+    add: boolean;
+    props: string;
+    section: 0 | 1 | 2 | 3 | 9;
+  };
+
   replaceString: string;
   withString: string;
 
@@ -83,6 +95,8 @@ export function clearSearchState() {
 export type ISourceOrDest = 'source' | 'dest' ;
 
 export type ISearchLocations = 'FileLeafRef' | 'Title' | 'Description' | 'WikiField' | 'CanvaseContent1' | 'WebPart' | 'Modified' ;
+
+export type IToggles = 'FPSPageInfo' | 'PivotTiles' ;
 
 // export const validSearchLocations: ISearchLocations[] = [ 'FileLeafRef', 'Title', 'Description', 'WikiField', 'CanvaseContent1', 'WebPart', 'Modified' ];
 export const validSearchLocations: ISearchLocations[] = [ 'FileLeafRef', 'Title', 'Description', 'WikiField', 'Modified' ];
@@ -120,6 +134,7 @@ export interface IModernCreatorState {
 
   showReplace: boolean;
   showFilters: boolean;
+  showWebParts: boolean;
 
   search: ISearchState;
 
@@ -163,6 +178,9 @@ export interface IAnyContent extends Partial<any> {
   meetsSearch: boolean;
   mirrorExisted: boolean;
 
+  copiedPage: boolean;
+  destinationUrl: string;
+
   FileLeafRef: string;
   FileRef: string;
 
@@ -176,5 +194,7 @@ export interface IAnyContent extends Partial<any> {
   modifiedLoc: string;
   createdLoc: string;
   publishedLoc?: string;
+
+
 
 }

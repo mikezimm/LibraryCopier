@@ -32,6 +32,13 @@ import * as strings from 'ModernCreatorWebPartStrings';
 import { DisplayMode } from '@microsoft/sp-core-library';
 import { filter } from 'lodash';
 
+export const iconStyles: any = { root: {
+  fontSize: 'x-large',
+  fontWeight: 600,
+  paddingRight: '10px',
+  paddingLeft: '10px',
+}};
+
 export const BaseErrorTrace = `ModernCreator|${ strings.analyticsWeb }|${ strings.analyticsList }`;
 
 export default class ModernCreator extends React.Component<IModernCreatorProps, IModernCreatorState> {
@@ -158,6 +165,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
       showReplace: false,
       showFilters: false,
+      showWebParts: false,
 
       copyProps: {
         user: this.props.pageContext.user.displayName,
@@ -172,6 +180,18 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
         sourcePickedWeb: null,
         destPickedWeb: null,
         sourceLib: this.lastSourceLib,
+
+        pageInfo: {
+          add: true,
+          props: '',
+          section: 0,
+        },
+
+        pivotTiles: {
+          add: false,
+          props: '',
+          section: 1,
+        },
 
         options: {
           h1: true,
@@ -354,8 +374,11 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       <div className={ styles.textBoxLabel } style={{ paddingBottom: '10px' }}>Filtered Pages - { this.state.filtered.length }</div>
       {
         this.state.filtered.map( item => {
+          const newText = item.filteredClass === '.updated' ? 'Updated page!' : item.filteredClass === '.created' ? 'Created page!' : item.filteredClass === '.skipped' ? 'Skipped page' : 'Existing page';
+          const iconName = item.filteredClass === '.updated' ? 'AutoEnhanceOff' : item.filteredClass === '.created' ? 'AutoEnhanceOff' : item.filteredClass === '.skipped' ? 'FastForward' : 'Link';
+          let newPageIcon = !item.destinationUrl ? null : <span onClick={ () => this.gotoNewPage( item ) } style={{ marginLeft: '40px', whiteSpace: 'nowrap' }}>{ newText } { <Icon iconName={iconName} style={ iconStyles }></Icon> } </span>;
           let filteredClass = item.filteredClass === '.created' ? styles.created : item.filteredClass === '.skipped' ? styles.skipped : item.filteredClass === '.updated' ? styles.updated : null;
-          return <div className={ [ filteredClass, styles.filteredPage ].join(' ') }onClick={() => { window.open( item.FileRef , '_blank' ) ; }}> { item.FileLeafRef } </div>;
+          return <div className={ [ filteredClass, styles.filteredPage ].join(' ') } > <span onClick={() => { window.open( item.FileRef , '_blank' ) ; }}> { item.FileLeafRef } </span> { newPageIcon }</div>;
         })
       }
     </div>;
@@ -373,7 +396,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
-        <h2>Modernize Classic Site Pages</h2>
+        <h2>Modernize Classic Site Pages - v1.0.0.2</h2>
         <div className={ null }>
           <div className={ styles.textControlsBox } style={{ }}>
             <div className={ styles.sourceInfo}>
@@ -393,6 +416,12 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
               { replaceString }
               { withString }
             </div>
+            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleWebParts.bind(this)} >Web parts</div>
+            <div className={ [ styles.webPartsInfo, this.state.showWebParts === false ? styles.hideInfo : null ].join( ' ') } style={{ display: 'flex' }}>
+              { `Add Webpart Toggles here` }
+              <ReactJson src={ this.state.copyProps.pivotTiles } name={ 'Pivot Tiles' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
+              <ReactJson src={ this.state.copyProps.pageInfo } name={ 'Page Info' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
+            </div>
           </div>
 
           <div className={ styles.inputChoices }>
@@ -404,7 +433,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
           { currentProgress }
           <div style={{ display: 'flex' }}>
             { pageList }
-            { skipList }
+            {/* { this.state.skips.length > 0 ? skipList : null } */}
           </div>
 
           <ReactJson src={ filteredUrls } name={ 'Filtered Page Urls' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
@@ -545,6 +574,9 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
   }
 
+  private gotoNewPage( item: IAnyContent ) {
+    window.open( item.destinationUrl, '_blank' );
+  }
 
   private async commentChange( value: string ) {
     this.lastComment = value;
@@ -561,6 +593,12 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     let newState = this.state.showFilters === true ? false : true;
     this.setState({ showFilters: newState });
   }
+
+  private _toggleWebParts() {
+    let newState = this.state.showWebParts === true ? false : true;
+    this.setState({ showWebParts: newState });
+  }
+
 /***
  *     .d8b.  d8b   db  .d8b.  db      db    db d888888b d888888b  .o88b. .d8888. 
  *    d8' `8b 888o  88 d8' `8b 88      `8b  d8' `~~88~~'   `88'   d8P  Y8 88'  YP 

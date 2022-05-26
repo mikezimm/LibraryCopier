@@ -117,7 +117,9 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
   const partDefs = await destWeb.getClientsideWebParts();
   console.log('partDefs:', partDefs);
-  const partDef = partDefs.filter(c => c.Name === "FPS Page Info - TOC & Props");
+  
+  const FPSPageInfo = partDefs.filter(c => c.Name === "FPS Page Info - TOC & Props");
+  const PivotTiles = partDefs.filter(c => c.Name.indexOf('Pivot Tiles') > -1 );
 
   for ( var i = 0; i < items.length; i++ ) {
 
@@ -152,10 +154,13 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
           if ( item.meetsSearch === false ) {
             //Skipping because it does not meet search
+            item.copiedPage = false;
 
           } else if ( destExists === true && copyProps.existing === 'skip' ) {
             //Skipping this item because it already exists.
             item.filteredClass = '.skipped';
+            item.copiedPage = false;
+            item.destinationUrl = testUrl;
             skips.push( item );
             // filtered.push( item );
 
@@ -220,8 +225,8 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             let page: IClientsidePage = null;
 
             if ( destExists === true ) {
-
-              page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath( `${ copyProps.destPickedWeb.ServerRelativeUrl}/SitePages/${dashFileName}` ));
+              const pageRelativeUrl = `${ copyProps.destPickedWeb.ServerRelativeUrl}/SitePages/${dashFileName}`;
+              page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath( pageRelativeUrl ));
               await page.load();
               let removedCount = 0;
               page.sections.map( section => {
@@ -236,12 +241,17 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 result = 'Added new sections - ';
 
               }
+              
               item.filteredClass = '.updated';
+              item.copiedPage = true;
+              item.destinationUrl = pageRelativeUrl;
 
             } else {
               page = await CreateClientsidePage( destWeb , item.FileLeafRef.replace('.aspx',''), title );
+              item.destinationUrl = `${destProps.ServerRelativeUrl}/SitePages/${item.FileLeafRef}`;
               result = 'Created page';
               item.filteredClass = '.created';
+              item.copiedPage = true;
             }
 
             // const page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath(`/sites/FinanceManual/TestContentCopy/sitepages/${dashFileName}`));
@@ -250,17 +260,48 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
             // add two columns with factor 6 - this is a two column layout as the total factor in a section should add up to 12
 
-            const part = ClientsideWebpart.fromComponentDef(partDef[0]);
-            console.log('part:', part);
-          
-            part.setProperties<any>( FPSPageInfoDefaults );
+            if ( copyProps.pageInfo.add !== true  ) {
+              //Do nothing
 
-            try {
-              const section1 = page.addSection().addControl( part );
-              update.sections.push( 'Added sectionL FPS Page Info');
-            } catch {
-              comments.push('FAILED sectionL FPS Page Info');
-              update.sections.push( 'FAILED sectionL FPS Page Info');
+            } else if ( FPSPageInfo.length === 0 ) {
+              alert( 'FPSPageInfo app is not yet available on this site.  Please add to app catalog and then re-run :)' ) ;
+
+            } else {
+              const part = ClientsideWebpart.fromComponentDef(FPSPageInfo[0]);
+              console.log('part:', part);
+  
+              part.setProperties<any>( FPSPageInfoDefaults );
+  
+              try {
+                const section1 = page.addSection().addControl( part );
+                update.sections.push( 'Added section FPS Page Info');
+              } catch {
+                comments.push('FAILED section FPS Page Info');
+                update.sections.push( 'FAILED section FPS Page Info');
+              }
+            }
+
+            //PivotTilesTeamsDefaults              if ( PivotTiles.length === 0 ) {
+            if ( copyProps.pivotTiles.add !== true  ) {
+              //Do nothing
+
+            } else if ( PivotTiles.length === 0 ) {
+
+              alert( 'PivotTiles app is not yet available on this site.  Please add to app catalog and then re-run :)' ) ;
+
+            } else {
+              const part = ClientsideWebpart.fromComponentDef(FPSPageInfo[0]);
+              console.log('part:', part);
+  
+              part.setProperties<any>( PivotTilesTeamsDefaults );
+  
+              try {
+                const section1 = page.addSection().addControl( part );
+                update.sections.push( 'Added section Pivot Tiles');
+              } catch {
+                comments.push('FAILED section Pivot Tiles');
+                update.sections.push( 'FAILED section Pivot Tiles');
+              }
             }
 
             try {
@@ -364,11 +405,13 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
     }
 
     items = sortObjectArrayByStringKey( items, 'asc', 'FileLeafRef' );
-    
+
     items.map( item => {
       item.meetsSearch = pagePassesSearch( item, search );
       item.filteredClass = '.tbd';
       if ( item.meetsSearch === true ) { filtered.push( item ) ; }
+      item.copiedPage = false;
+      item.destinationUrl = '';
     });
 
     console.log( 'getClassicContent', copyProps , items );
@@ -385,39 +428,143 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
   }
 
-  const FPSPageInfoDefaults: any = {
-      "description": "FPS Page Info - TOC & Props",
+const FPSPageInfoDefaults: any = {
+  "description": "FPS Page Info - TOC & Props",
 
-      "bannerTitle": "Page Info",
+  "bannerTitle": "Page Info",
 
-      "showTOC": true,
-      "TOCTitleField": "Table of Contents",
-      "tocExpanded": true,
-      "minHeadingToShow": "h3",
-      
-      "pageInfoStyle": "\"paddingBottom\":\"20px\",\"backgroundColor\":\"#dcdcdc\";\"borderLeft\":\"solid 3px #c4c4c4\"",
+  "showTOC": true,
+  "TOCTitleField": "Table of Contents",
+  "tocExpanded": true,
+  "minHeadingToShow": "h3",
+  
+  "pageInfoStyle": "\"paddingBottom\":\"20px\",\"backgroundColor\":\"#dcdcdc\";\"borderLeft\":\"solid 3px #c4c4c4\"",
 
-      "bannerStyleChoice": "corpDark1",
-      "bannerStyle": "{\"color\":\"white\",\"backgroundColor\":\"#005495\",\"fontSize\":\"larger\",\"fontWeight\":600,\"fontStyle\":\"normal\",\"padding\":\"0px 10px\",\"height\":\"48px\",\"cursor\":\"pointer\"}",
-      "bannerCmdStyle": "{\"color\":\"white\",\"backgroundColor\":\"#005495\",\"fontSize\":16,\"fontWeight\":\"normal\",\"fontStyle\":\"normal\",\"padding\":\"7px 4px\",\"marginRight\":\"0px\",\"borderRadius\":\"5px\",\"cursor\":\"pointer\"}",
+  "bannerStyleChoice": "corpDark1",
+  "bannerStyle": "{\"color\":\"white\",\"backgroundColor\":\"#005495\",\"fontSize\":\"larger\",\"fontWeight\":600,\"fontStyle\":\"normal\",\"padding\":\"0px 10px\",\"height\":\"48px\",\"cursor\":\"pointer\"}",
+  "bannerCmdStyle": "{\"color\":\"white\",\"backgroundColor\":\"#005495\",\"fontSize\":16,\"fontWeight\":\"normal\",\"fontStyle\":\"normal\",\"padding\":\"7px 4px\",\"marginRight\":\"0px\",\"borderRadius\":\"5px\",\"cursor\":\"pointer\"}",
 
-      "propsTitleField":  "Page Properties",
+  "propsTitleField":  "Page Properties",
 
-      "selectedProperties": [],
+  "selectedProperties": [],
 
-      "showCustomProps": true,
-      "propsExpanded": false,
-      "showOOTBProps": true,
-      "showApprovalProps": false,
+  "showCustomProps": true,
+  "propsExpanded": false,
+  "showOOTBProps": true,
+  "showApprovalProps": false,
 
-      "defPinState": "normal",
-      "forcePinState": false,
+  "defPinState": "normal",
+  "forcePinState": false,
 
-      "infoElementChoice": "IconName=Unknown",
-      "infoElementText": "Question mark circle",
+  "infoElementChoice": "IconName=Unknown",
+  "infoElementText": "Question mark circle",
 
-      "showGoToHome": true,
-      "showGoToParent": true,
-      "homeParentGearAudience": "Everyone"
+  "showGoToHome": true,
+  "showGoToParent": true,
+  "homeParentGearAudience": "Everyone"
 
-    };
+};
+
+
+const PivotTilesTeamsDefaults: any = {
+  "scenario": "TEAM",
+  "showBanner": true,
+  "showGoToHome": true,
+  "showGoToParent": true,
+  "description": "Pivot Tiles",
+  "PropertyPaneDescription": "Webpart Settings",
+  "BasicGroupName": "Group 1",
+  "DescriptionFieldLabel": "Description Field",
+  "heroType": "none",
+  "heroCategory": "Tactics",
+  "heroRatio": 3,
+  "setHeroFit": "centerCover",
+  "setHeroCover": "portrait",
+  "definitionToggle": true,
+  "listDefinition": "SitePages",
+  "listWebURL": "",
+  "listTitle": "Site Pages",
+  "setTab": "MainMenu",
+  "otherTab": "Others",
+  "enableChangePivots": false,
+  "onHoverEffect": "slideUp",
+  "setSize": "150",
+  "setRatio": "4x1",
+  "setImgFit": "centerCover",
+  "setImgCover": "landscape",
+  "setFilter": "Id ne 'X' and ContentTypeId ne '0x012000F6C75276DBE501468CA3CC575AD8E159' and ContentTypeId ne '0x0120007226ABCF0E6367418096478B44515055' and Title ne 'Home'",
+  "setPivSize": "normal",
+  "setPivFormat": "links",
+  "setPivOptions": "",
+  "onHoverZoom": "1.2",
+  "propURLQuery": "",
+  "imageWidth": 150,
+  "imageHeight": 150,
+  "showHero": false,
+  "target": "top",
+  "colTitleText": "Title",
+  "colHoverText": "Description",
+  "colCategory": "Author/Title",
+  "colColor": "",
+  "colSize": "",
+  "colGoToLink": "File/ServerRelativeUrl",
+  "colOpenBehaviour": "",
+  "colImageLink": "BannerImageUrl.Url",
+  "colSort": "Title",
+  "filterEverything": true,
+  "custCatType": "semiColon1",
+  "custCatCols": "",
+  "custCatLogi": "",
+  "custCatBrak": false,
+  "subsitesInclude": true,
+  "subsitesCategory": "Subsites",
+  "hubsOthers": false,
+  "ignoreList": false,
+  "hubsInclude": false,
+  "hubsCategory": "Hub",
+  "hubsLazy": false,
+  "subsOthers": false,
+  "permissionsWebInclude": true,
+  "permissionsOnlySiteAdmins": false,
+  "permissionsAudience": "",
+  "permissionsWebCategory": "Permissions",
+  "permissionsListsInclude": true,
+  "permissionsListCategory": "",
+  "permissionsLists": "",
+  "permissionsSystemExclude": true,
+  "permissionsHiddenExclude": true,
+  "permissionsHealth": true,
+  "includeInfo": true,
+  "includeWarn": true,
+  "pagesHideSystem": true,
+  "pagesHideTemplates": true,
+  "pagesHideFolders": true,
+  "newsCheckedOut": true,
+  "newsUnPublished": true,
+  "newsLinks": true,
+  "groupsInclude": true,
+  "groupsCategory": "Groups",
+  "groupsLazy": true,
+  "groupsList": "",
+  "groupsListXtra": "",
+  "groupsOthers": false,
+  "groupsShowAdmins": true,
+  "groupsShowGuests": true,
+  "usersInclude": false,
+  "usersCategory": "Users",
+  "usersLazy": true,
+  "usersOthers": false,
+  "listsInclude": false,
+  "listIconStyles": "icon=BulletedList2;font=green",
+  "listFilter": "",
+  "listCategory": "",
+  "listOthers": false,
+  "libsInclude": false,
+  "libsIconStyles": "icon=FabricFolder;font=eblue",
+  "libsFilter": "",
+  "libsCategory": "Libraries",
+  "libsOthers": false,
+  "listLibCat": "",
+  "listHideSystem": true,
+  "colTileStyle": ""
+};
