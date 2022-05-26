@@ -1,7 +1,9 @@
 import * as React from 'react';
 import styles from './ModernCreator.module.scss';
-import { clearSearchState, IAllTextBoxTypes, IAnyContent, ICreateThesePages, IModernCreatorProps, IModernCreatorState, ISearchLocations, ISearchState, ISourceOrDest, validSearchLocations } from './IModernCreatorProps';
+import { clearSearchState, IAllTextBoxTypes, IAnyContent, ICreateThesePages, IModernCreatorProps, IModernCreatorState, ISearchLocations, ISearchState, ISourceOrDest, IValidWebParts, validSearchLocations, ValidWebParts } from './IModernCreatorProps';
 import { sp, Views, IViews, ISite } from "@pnp/sp/presets/all";
+
+import { Toggle } from 'office-ui-fabric-react/lib/Toggle';
 
 import { Label, ILabelStyles } from 'office-ui-fabric-react/lib/Label';
 import { Pivot, PivotItem, IPivotItemProps} from 'office-ui-fabric-react/lib/Pivot';
@@ -41,6 +43,8 @@ export const iconStyles: any = { root: {
 
 export const BaseErrorTrace = `ModernCreator|${ strings.analyticsWeb }|${ strings.analyticsList }`;
 
+const defToggleStyle = { root: { width: 160, } };
+
 export default class ModernCreator extends React.Component<IModernCreatorProps, IModernCreatorState> {
 
   private lastSourceWeb = this.props.sourceWeb ? this.props.sourceWeb  : '/sites/AutolivFinancialManual/';
@@ -51,7 +55,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
   //Format copied from:  https://developer.microsoft.com/en-us/fluentui#/controls/web/textfield
   private getWebBoxStyles( props: ITextFieldStyleProps): Partial<ITextFieldStyles> {
     const { required } = props;
-    return { fieldGroup: [ { width: '75%', maxWidth: '600px' }, { borderColor: 'lightgray', }, ], };
+    return { fieldGroup: [ { width: '90%', maxWidth: '600px' }, { borderColor: 'lightgray', }, ], };
   }
 
   private createWebInput( textBox: IAllTextBoxTypes ) {
@@ -61,8 +65,9 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     let side = textBox === 'dest' || textBox === 'source' ? 'left' : 'right' ;
     let padding = side === 'right' ? null: '0px' ;
-    let width = side === 'right' ? '300px' : '700px' ;
+    let width = side === 'right' ? '350px' : '700px' ;
     let title = null;
+    let multiline = false;
 
     switch ( textBox  ) {
       case 'source':
@@ -91,6 +96,15 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
         width = '220px';
         break;
 
+      //Must match 'copyProps.pivotTiles.props' | 'copyProps.pageInfo.props'
+      case 'pivotTiles': case 'pageInfo':
+        defValue = this.state.copyProps[ textBox ].props ;
+        errors = this.state.copyProps[ textBox ].errors ;
+        padding = '0px';
+        width = '570px';
+        multiline = true;
+        break;
+
       case 'replaceString': case 'withString':
         width = '50%';
         title = 'Applies to EVERYTHING in page content including Urls & Links! ';
@@ -109,11 +123,11 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
         onChange={ this.textFieldChange.bind( this, textBox ) }
         validateOnFocusIn
         validateOnFocusOut
-        multiline= { false }
+        multiline= { multiline }
         autoAdjustHeight= { true }
 
       />{ errors && errors.length > 0 ? 
-        <div style={ null }>
+        <div className={ styles.textBoxErrorContent }style={ { paddingTop: '15px', fontSize: 'larger', fontWeight: 600 } }>
            { errors }
         </div> : null }
       </div>;
@@ -185,12 +199,14 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
           add: true,
           props: '',
           section: 0,
+          errors: [],
         },
 
         pivotTiles: {
           add: false,
           props: '',
           section: 1,
+          errors: [],
         },
 
         options: {
@@ -350,6 +366,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     let replaceString = this.createWebInput('replaceString');
     let withString = this.createWebInput('withString');
 
+
     let searchBoxs = validSearchLocations.map( location => {
       return this.createWebInput( location );
     });
@@ -392,6 +409,21 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       }
     </div>;
 
+    const webPartInput = ValidWebParts.map( webpart => {
+      const textBox = this.createWebInput( webpart );
+      const toggle = <Toggle label={ `Add ${webpart} to page` } 
+        onChange={ () => { this.toggleWebPartsInfo( webpart ) ; } } 
+        checked={ this.state.copyProps[webpart].add }
+        styles={ defToggleStyle }
+      />;
+
+      return <div>
+        { toggle } 
+        { textBox } 
+      </div>;
+
+    });
+
     const filteredUrls = this.state.filtered.map( ( item: IAnyContent ) => { return item.FileLeafRef ; });
 
     return (
@@ -399,6 +431,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
         <h2>Modernize Classic Site Pages - v1.0.0.2</h2>
         <div className={ null }>
           <div className={ styles.textControlsBox } style={{ }}>
+
             <div className={ styles.sourceInfo}>
               { sourceUrl }
               { sourceLib }
@@ -418,9 +451,10 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
             </div>
             <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleWebParts.bind(this)} >Web parts</div>
             <div className={ [ styles.webPartsInfo, this.state.showWebParts === false ? styles.hideInfo : null ].join( ' ') } style={{ display: 'flex' }}>
-              { `Add Webpart Toggles here` }
-              <ReactJson src={ this.state.copyProps.pivotTiles } name={ 'Pivot Tiles' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
-              <ReactJson src={ this.state.copyProps.pageInfo } name={ 'Page Info' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
+              {/* { `Add Webpart Toggles here` } */}
+              { webPartInput }
+              {/* <ReactJson src={ this.state.copyProps.pivotTiles } name={ 'Pivot Tiles' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
+              <ReactJson src={ this.state.copyProps.pageInfo } name={ 'Page Info' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/> */}
             </div>
           </div>
 
@@ -431,6 +465,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
           </div>
 
           { currentProgress }
+
           <div style={{ display: 'flex' }}>
             { pageList }
             {/* { this.state.skips.length > 0 ? skipList : null } */}
@@ -538,8 +573,40 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     } else if ( item === 'comment') {
       this.commentChange(newValue);
+
+    } else if ( item === 'pivotTiles' || item === 'pageInfo' ) {
+      this.updateWebPartInfo( item, newValue );
+
+    } else if ( item === 'replaceString' || item === 'withString' ) {
+      // this.lastComment = value;
+      let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+      copyProps[item] = newValue;
+      this.setState({ copyProps: copyProps, });
+
     }
 
+  }
+
+  private updateWebPartInfo( webpart: string, value: string ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+    let updateWebPart = copyProps[ webpart ] ;
+
+    updateWebPart.props = value;
+    updateWebPart.errors = [];
+
+    if ( value ) {
+      try {
+        const test = JSON.parse( value );
+  
+      } catch (e) {
+        updateWebPart.errors = [ 'Properties are not valid JSON' ];
+  
+      }
+    }
+
+    // copyProps[ webpart ] = updateWebPart;
+
+    this.setState( { copyProps: copyProps } ) ;
 
   }
 
@@ -582,6 +649,12 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     this.lastComment = value;
     this.setState({ comment: this.lastComment, });
 
+  }
+
+  private toggleWebPartsInfo( webpart: IValidWebParts ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+    copyProps[webpart].add = copyProps[webpart].add === true ? false : true;
+    this.setState({ copyProps: copyProps });
   }
 
   private _toggleReplace() {

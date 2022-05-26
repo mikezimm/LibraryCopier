@@ -30,7 +30,6 @@ import { IAnyContent, ICreateThesePages, ISearchState } from './IModernCreatorPr
 import { divide } from 'lodash';
 import { isValidElement } from 'react';
 
-
 export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
 
 export async function _LinkIsValid(url)
@@ -111,7 +110,23 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
   let images: any[] = [];
   let skips: any[] = [];
 
+  let newPivotTilesTeamsDefaults = JSON.parse( JSON.stringify( PivotTilesTeamsDefaults )) ;
 
+  if ( copyProps.pivotTiles.props && copyProps.pivotTiles.errors.length === 0 ) {
+    const addProps = JSON.parse( copyProps.pivotTiles.props );
+    Object.keys( addProps ).map( prop => {
+      newPivotTilesTeamsDefaults[prop] = addProps[ prop ];
+    });
+  }
+
+  let newFPSPageInfoDefaults = JSON.parse( JSON.stringify( FPSPageInfoDefaults )) ;
+
+  if ( copyProps.pageInfo.props && copyProps.pageInfo.errors.length === 0 ) {
+    const addProps = JSON.parse( copyProps.pageInfo.props );
+    Object.keys( addProps ).map( prop => {
+      newFPSPageInfoDefaults[prop] = addProps[ prop ];
+    });
+  }
 
   const destWeb = Web( `${window.location.origin}${destProps.ServerRelativeUrl}` );
 
@@ -123,10 +138,11 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
   for ( var i = 0; i < items.length; i++ ) {
 
+      let webPartNotes: any[] = [];
+
       if ( i < 200 ) {
 
           let item = items[i];
-          let result = 'TBD';
           // use the web factory to create a page in a specific web
           let title = item.Title ? item.Title : item.FileLeafRef.replace('.aspx','');
           let dashFileName = item.FileLeafRef.replace(/\s/g,'-'); 
@@ -194,17 +210,36 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             if ( update.links > 0  ) { links.push( item.FileLeafRef ) ; }
 
 
-            //Replace all urls with new links
+            //Replace all Pages library urls with new links - DONE First because of Library name change
             //https://autoliv.sharepoint.com/sites//FinanceManual/Manual//StandardDocuments/Transaction%20exposure%20reporting%20instruction.aspx
 
-            const regexFind = new RegExp( `${sourceLibraryUrl}`, 'gi' );
-            newWikiField = newWikiField.replace( regexFind, destLibraryUrl );
+            const regexFindPagesLib = new RegExp( `${sourceLibraryUrl}`, 'gi' );
+            // NOT doing this update because of complex SiteCollectionImages impact
+            // newWikiField = newWikiField.replace( regexFindPagesLib, destLibraryUrl );
+
+            //Replace all remaining references to the old Site Url
+            const regexFindWebUrl = new RegExp( `${sourceWebUrl}`, 'gi' );
+            // NOT doing this update because of complex SiteCollectionImages impact
+            // newWikiField = newWikiField.replace( regexFindWebUrl, destWebUrl );
+
+            const imgRegex = new RegExp( '\<img ', 'gmi');
+            const attRegex = new RegExp( '\<a ', 'gmi');
+            const foundImages = newWikiField.match( imgRegex );
+            const foundLinks = newWikiField.match( attRegex );
+            newWikiField = newWikiField.replace( imgRegex, '<div style="font-size: larger; font-weight: bold"><mark>Update old Image Link</mark></div><img ');
+            newWikiField = newWikiField.replace( attRegex, '<div style="font-size: larger; font-weight: bold"><mark>Update old Link</mark></div><a ');
+
+            if ( copyProps.replaceString ) {
+              const regexStringReplace = new RegExp( `${copyProps.replaceString}`, 'g' );
+              const replaceCount = newWikiField.split( copyProps.replaceString ).length -1;
+              newWikiField = newWikiField.replace( regexStringReplace, copyProps.withString );
+              webPartNotes.push( `Replaced (${replaceCount}x this: '${copyProps.replaceString}' with this: '${copyProps.withString}'`);
+            }
 
             const imageSplits = newWikiField.split('<img');
-
+            update.images = imageSplits.length -1;
             if ( imageSplits.length > 1 ) { 
               images.push( item.FileLeafRef );
-              update.images ++;
             }
 
             item.links = update.links;
@@ -235,21 +270,21 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               });
 
               if ( removedCount > 0 ) {
-                result = 'Replaced Sections - ' + removedCount;
+                webPartNotes.unshift( 'Removed existing sections - ' + removedCount ) ;
 
               } else {
-                result = 'Added new sections - ';
+                webPartNotes.unshift( 'Added new sections - ' ) ;
 
               }
-              
+
               item.filteredClass = '.updated';
               item.copiedPage = true;
               item.destinationUrl = pageRelativeUrl;
 
             } else {
               page = await CreateClientsidePage( destWeb , item.FileLeafRef.replace('.aspx',''), title );
-              item.destinationUrl = `${destProps.ServerRelativeUrl}/SitePages/${item.FileLeafRef}`;
-              result = 'Created page';
+              item.destinationUrl = `${destProps.ServerRelativeUrl}/SitePages/${item.FileLeafRef.replace(/ /g,'-')}`;
+              webPartNotes.unshift( 'Created page' ) ;
               item.filteredClass = '.created';
               item.copiedPage = true;
             }
@@ -264,20 +299,28 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               //Do nothing
 
             } else if ( FPSPageInfo.length === 0 ) {
-              alert( 'FPSPageInfo app is not yet available on this site.  Please add to app catalog and then re-run :)' ) ;
+              alert( 'FPSPageInfo app is NOT yet available on this site.  Please add to app catalog and then re-run :)' ) ;
+              webPartNotes.push( 'Page Info web part NOT available on this site yet.  Did NOT add.' );
 
             } else {
               const part = ClientsideWebpart.fromComponentDef(FPSPageInfo[0]);
               console.log('part:', part);
-  
-              part.setProperties<any>( FPSPageInfoDefaults );
-  
+
+              part.setProperties<any>( newFPSPageInfoDefaults ); //"custCatLogi": "Property;Planning;CAPEX;Other"
+
               try {
                 const section1 = page.addSection().addControl( part );
                 update.sections.push( 'Added section FPS Page Info');
+                webPartNotes.push( 'Page Info web part added to the page.' );
+                if ( copyProps.pageInfo.props ) {
+                  if ( copyProps.pageInfo.errors.length === 0 ) { webPartNotes.push( `--> PageInfoPresets attemped:  ${copyProps.pageInfo.props}`); }
+                  else {  webPartNotes.push( `--> PageInfoPresets FAILED:  ${copyProps.pageInfo.props}`); }
+                }
+
               } catch {
                 comments.push('FAILED section FPS Page Info');
                 update.sections.push( 'FAILED section FPS Page Info');
+                webPartNotes.push( 'Had ISSUE adding Page Info web part to the page.' );
               }
             }
 
@@ -286,21 +329,27 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               //Do nothing
 
             } else if ( PivotTiles.length === 0 ) {
-
-              alert( 'PivotTiles app is not yet available on this site.  Please add to app catalog and then re-run :)' ) ;
+              alert( 'PivotTiles app is NOT yet available on this site.  Please add to app catalog and then re-run :)' ) ;
+              webPartNotes.push( 'Pivot Tiles web part NOT available on this site yet.  Did NOT add.' );
 
             } else {
-              const part = ClientsideWebpart.fromComponentDef(FPSPageInfo[0]);
+              const part = ClientsideWebpart.fromComponentDef(PivotTiles[0]);
               console.log('part:', part);
-  
-              part.setProperties<any>( PivotTilesTeamsDefaults );
-  
+
+              part.setProperties<any>( newPivotTilesTeamsDefaults );
+
               try {
                 const section1 = page.addSection().addControl( part );
                 update.sections.push( 'Added section Pivot Tiles');
+                webPartNotes.push( 'Pivot Tiles web part added to the page.' );
+                if ( copyProps.pivotTiles.props ) {
+                  if ( copyProps.pivotTiles.errors.length === 0 ) { webPartNotes.push( `--> PivotTilesPresets attemped:  ${copyProps.pivotTiles.props}`); }
+                  else {  webPartNotes.push( `--> PivotTilesPresets FAILED:  ${copyProps.pivotTiles.props}`); }
+                }
               } catch {
                 comments.push('FAILED section Pivot Tiles');
                 update.sections.push( 'FAILED section Pivot Tiles');
+                webPartNotes.push( 'Had ISSUE adding Pivot Tiles web part to the page.' );
               }
             }
 
@@ -314,6 +363,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
             try {
 
+              webPartNotes.push( 'Added this section with update notes' );
               let rightNow = new Date();
               // <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
               // <div>Copied from <a onclick={window.open(item.FileRef, "_blank")}href="${ item.FileRef }">${item.FileRef}</a></div>
@@ -321,10 +371,12 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 
                 <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
                 <div>via script at: ${ rightNow.toUTCString() }</div>
-                <div>Result: ${ result }</div>
+                <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
+                <div>Results</div>
+                <div><ol>${ webPartNotes.map( note => { return `<li>${ note }</li>` ; } ).join('') }</ol></div>
                 <div>Links update: ${ update.links }</div>
                 <div>Images found: ${ update.images }</div>
-                <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
+
               </div>`;
 
               const section3 = page.addSection().addControl(new ClientsideText( logHTML ));
@@ -355,11 +407,10 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
           } else {
             fails.push( update );
-            result += 'Failures: ' + comments.length;
 
           }
 
-          item.result = result;
+          item.result = webPartNotes;
           //updateProgress( latest: any, copyProps: ICreateThesePages, item: IAnyContent, result: string )
           let itemCount = i + 1;
           let path = item.meetsSearch !== true ? ' -- Did not meet Search criteria' : '';

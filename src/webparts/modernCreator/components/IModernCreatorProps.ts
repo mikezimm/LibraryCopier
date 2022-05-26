@@ -55,12 +55,14 @@ export interface ICreateThesePages {
     add: boolean;
     props: string;
     section: 0 | 1 | 2 | 3 | 9;
+    errors: any[];
   };
 
   pageInfo: {
     add: boolean;
     props: string;
     section: 0 | 1 | 2 | 3 | 9;
+    errors: any[];
   };
 
   replaceString: string;
@@ -96,13 +98,14 @@ export type ISourceOrDest = 'source' | 'dest' ;
 
 export type ISearchLocations = 'FileLeafRef' | 'Title' | 'Description' | 'WikiField' | 'CanvaseContent1' | 'WebPart' | 'Modified' ;
 
-export type IToggles = 'FPSPageInfo' | 'PivotTiles' ;
+export type IValidWebParts = 'pivotTiles' | 'pageInfo';
+
+export const ValidWebParts : IValidWebParts[] = [  'pageInfo', 'pivotTiles' ,];
 
 // export const validSearchLocations: ISearchLocations[] = [ 'FileLeafRef', 'Title', 'Description', 'WikiField', 'CanvaseContent1', 'WebPart', 'Modified' ];
 export const validSearchLocations: ISearchLocations[] = [ 'FileLeafRef', 'Title', 'Description', 'WikiField', 'Modified' ];
 
-
-export type IAllTextBoxTypes = ISourceOrDest | 'library' | 'comment' | ISearchLocations | 'replaceString' | 'withString' ;
+export type IAllTextBoxTypes = ISourceOrDest | 'library' | 'comment' | ISearchLocations | 'replaceString' | 'withString' | IValidWebParts ;
 
 /**
  * NOTE:  Keys of ISearchState should match ISearchLocations
