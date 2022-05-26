@@ -213,21 +213,21 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             //Replace all Pages library urls with new links - DONE First because of Library name change
             //https://autoliv.sharepoint.com/sites//FinanceManual/Manual//StandardDocuments/Transaction%20exposure%20reporting%20instruction.aspx
 
-            const regexFindPagesLib = new RegExp( `${sourceLibraryUrl}`, 'gi' );
+            const regexFindPagesLib = new RegExp( `${sourceLibraryUrl}`, 'gim' );
             // NOT doing this update because of complex SiteCollectionImages impact
-            // newWikiField = newWikiField.replace( regexFindPagesLib, destLibraryUrl );
+            newWikiField = newWikiField.replace( regexFindPagesLib, destLibraryUrl );
 
             //Replace all remaining references to the old Site Url
-            const regexFindWebUrl = new RegExp( `${sourceWebUrl}`, 'gi' );
+            const regexFindWebUrl = new RegExp( `${sourceWebUrl}`, 'gim' );
             // NOT doing this update because of complex SiteCollectionImages impact
-            // newWikiField = newWikiField.replace( regexFindWebUrl, destWebUrl );
+            newWikiField = newWikiField.replace( regexFindWebUrl, destWebUrl );
 
             const imgRegex = new RegExp( '\<img ', 'gmi');
             const attRegex = new RegExp( '\<a ', 'gmi');
             const foundImages = newWikiField.match( imgRegex );
             const foundLinks = newWikiField.match( attRegex );
-            newWikiField = newWikiField.replace( imgRegex, '<div style="font-size: larger; font-weight: bold"><mark>Update old Image Link</mark></div><img ');
-            newWikiField = newWikiField.replace( attRegex, '<div style="font-size: larger; font-weight: bold"><mark>Update old Link</mark></div><a ');
+            newWikiField = newWikiField.replace( imgRegex, '<div style="font-size: larger; font-weight: bold"><mark>Verify-Replace old Images</mark></div><img ');
+            newWikiField = newWikiField.replace( attRegex, '<div style="font-size: larger; font-weight: bold"><mark>Verify-Replace old Images</mark></div><a ');
 
             if ( copyProps.replaceString ) {
               const regexStringReplace = new RegExp( `${copyProps.replaceString}`, 'g' );
