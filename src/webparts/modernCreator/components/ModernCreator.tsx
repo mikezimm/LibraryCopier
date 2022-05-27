@@ -236,7 +236,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
  
    //updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results } )
    //updateProgress( 'Page Copy', result, item, { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps } )
-   private async updateProgress( latest: any, item: IAnyContent, result: string, progressComment: string ) {
+   private async updateProgress( latest: any, item: IAnyContent, result: string[], progressComment: string ) {
 
      this.setState({  status: latest , progressComment: progressComment, skips: latest.skips, filtered: latest.filtered });
      this.saveLoadAnalytics( 'Page Copy', result, item, latest.copyProps,  );
@@ -682,7 +682,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
  *                                                                                
  *                                                                                
  */
- private async saveLoadAnalytics( Title: string, Result: string, item: IAnyContent, copyProps: ICreateThesePages ) {
+ private async saveLoadAnalytics( Title: string, Result: string[], item: IAnyContent, copyProps: ICreateThesePages ) {
 
     // Do not save anlytics while in Edit Mode... only after save and page reloads
     if ( this.props.displayMode === DisplayMode.Edit ) { return; }
@@ -706,7 +706,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       Modified: item.Modified,
       ID: item.ID,
     };
-    let zzzRichText3Obj = null;
+    let zzzRichText3Obj = Result;
 
     console.log( 'zzzRichText1Obj:', zzzRichText1Obj);
     console.log( 'zzzRichText2Obj:', zzzRichText2Obj);
@@ -733,13 +733,15 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     // let FPSPropsObj = buildFPSAnalyticsProps( this.properties, this.wpInstanceID, this.context.pageContext.web.serverRelativeUrl );
     // FPSProps = JSON.stringify( FPSPropsObj );
 
+    // let resultString = Result.join( '; ');
+
     let saveObject: IZSentAnalytics = {
 
       loadProperties: loadProperties,
 
       Title: Title,  //General Label used to identify what analytics you are saving:  such as Web Permissions or List Permissions.
 
-      Result: Result,  //Success or Error
+      Result:  Result[0] ? Result[0] : 'Unknown',  //Success or Error
 
       zzzText1: `${ item.FileLeafRef }`,
       zzzText2: `${ this.lastComment }`,
