@@ -51,6 +51,9 @@ export interface ICreateThesePages {
   confirm: 'all' | 'each';
   updateWiki: boolean;
 
+  replaceWebUrls: boolean;
+  markImagesAndLinks: boolean;
+
   pivotTiles: {
     add: boolean;
     props: string;
@@ -99,6 +102,10 @@ export type ISourceOrDest = 'source' | 'dest' ;
 export type ISearchLocations = 'FileLeafRef' | 'Title' | 'Description' | 'WikiField' | 'CanvaseContent1' | 'WebPart' | 'Modified' ;
 
 export type IValidWebParts = 'pivotTiles' | 'pageInfo';
+
+export type IOtherOptions = 'replaceWebUrls' | 'markImagesAndLinks';
+
+export const OtherOptions : IOtherOptions[] = [  'replaceWebUrls', 'markImagesAndLinks' ,];
 
 export const ValidWebParts : IValidWebParts[] = [  'pageInfo', 'pivotTiles' ,];
 

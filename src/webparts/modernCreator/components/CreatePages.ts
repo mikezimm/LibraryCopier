@@ -30,6 +30,28 @@ import { IAnyContent, ICreateThesePages, ISearchState } from './IModernCreatorPr
 import { divide } from 'lodash';
 import { isValidElement } from 'react';
 
+//Font sizes:  24px:  fontSizeXLargePlus,  28px:  fontSizeXxLarge
+const VerifyDiv = `<div>
+  <span class="highlightColorYellow">
+    <span class="fontColorRed">
+      <strong>
+        <span class="fontSizeXxLarge">Verify-Replace old Images</span>
+      </strong>
+    </span>
+  </span>
+</div>`;
+
+//Font sizes:  24px:  fontSizeXLargePlus,  28px:  fontSizeXxLarge
+const VerifyAtt = `
+  <span class="highlightColorYellow">
+    <span class="fontColorRed">
+      <strong>
+        <span class="fontSizeXxLarge">Verify-Replace old links</span>
+      </strong>
+    </span>
+  </span>`;
+
+
 export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
 
 export async function _LinkIsValid(url)
@@ -217,23 +239,27 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             // NOT doing this update because of complex SiteCollectionImages impact
             newWikiField = newWikiField.replace( regexFindPagesLib, destLibraryUrl );
 
-            //Replace all remaining references to the old Site Url
-            const regexFindWebUrl = new RegExp( `${sourceWebUrl}`, 'gim' );
-            // NOT doing this update because of complex SiteCollectionImages impact
-            newWikiField = newWikiField.replace( regexFindWebUrl, destWebUrl );
+            if ( copyProps.replaceWebUrls === true ) {
+              //Replace all remaining references to the old Site Url
+              const regexFindWebUrl = new RegExp( `${sourceWebUrl}`, 'gim' );
+              // NOT doing this update because of complex SiteCollectionImages impact
+              newWikiField = newWikiField.replace( regexFindWebUrl, destWebUrl );
+            }
 
-            const imgRegex = new RegExp( '\<img ', 'gmi');
-            const attRegex = new RegExp( '\<a ', 'gmi');
-            const foundImages = newWikiField.match( imgRegex );
-            const foundLinks = newWikiField.match( attRegex );
-            newWikiField = newWikiField.replace( imgRegex, '<div style="font-size: larger; font-weight: bold"><mark>Verify-Replace old Images</mark></div><img ');
-            newWikiField = newWikiField.replace( attRegex, '<div style="font-size: larger; font-weight: bold"><mark>Verify-Replace old Images</mark></div><a ');
+            if ( copyProps.markImagesAndLinks === true ) {
+              const imgRegex = new RegExp( '\<img ', 'gmi');
+              const attRegex = new RegExp( '\<a ', 'gmi');
+              const foundImages = newWikiField.match( imgRegex );
+              const foundLinks = newWikiField.match( attRegex );
+              newWikiField = newWikiField.replace( imgRegex, `${VerifyDiv}<img ` );
+              newWikiField = newWikiField.replace( attRegex, `${VerifyAtt}<a `);
+            }
 
             if ( copyProps.replaceString ) {
               const regexStringReplace = new RegExp( `${copyProps.replaceString}`, 'g' );
               const replaceCount = newWikiField.split( copyProps.replaceString ).length -1;
               newWikiField = newWikiField.replace( regexStringReplace, copyProps.withString );
-              webPartNotes.push( `Replaced (${replaceCount}x this: '${copyProps.replaceString}' with this: '${copyProps.withString}'`);
+              webPartNotes.push( `Replaced ( ${replaceCount } times) this: '<b>${copyProps.replaceString}</b>' with this: '<b>${copyProps.withString}</b>'`);
             }
 
             const imageSplits = newWikiField.split('<img');
@@ -367,6 +393,18 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               let rightNow = new Date();
               // <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
               // <div>Copied from <a onclick={window.open(item.FileRef, "_blank")}href="${ item.FileRef }">${item.FileRef}</a></div>
+
+              const replaceLibUrls = `<div>Updated all source library urls on page: </br> &nbsp;&nbsp;&nbsp; ${sourceLibraryUrl} >>>> ${ destLibraryUrl }</div>`;
+              webPartNotes.push( replaceLibUrls );
+
+              const replaceWebUrls = copyProps.replaceWebUrls !== true ? '' :
+                `<div>Replaced all string instance: </br> &nbsp;&nbsp;&nbsp; ${sourceWebUrl} >>>> ${destWebUrl}</div>`;
+              if ( copyProps.replaceWebUrls === true ) webPartNotes.push( replaceWebUrls );
+
+              const markImagesAndLinks = copyProps.markImagesAndLinks !== true ? '' :
+                `<div>Highighted all links and image tags on the page</br> &nbsp;&nbsp;&nbsp; so you can more easily find and verify them.</div>`;
+                if ( copyProps.markImagesAndLinks === true ) webPartNotes.push( markImagesAndLinks );
+
               const logHTML = `<div>
                 
                 <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
@@ -374,7 +412,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
                 <div>Results</div>
                 <div><ol>${ webPartNotes.map( note => { return `<li>${ note }</li>` ; } ).join('') }</ol></div>
-                <div>Links update: ${ update.links }</div>
+                <div>Links found: ${ update.links }</div>
                 <div>Images found: ${ update.images }</div>
 
               </div>`;

@@ -72,7 +72,19 @@
   flex-direction: row;
   padding: 10px 20px 5px 20px;
   transition:all 0.4s ease;
-  height: 70px;
+  // height: 70px;
+  opacity: 1;
+  // width: 100%;
+  // background: lightgray;
+
+}
+
+.allReplaceInfo{
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px 5px 20px;
+  transition:all 0.4s ease;
+  height: 170px;
   opacity: 1;
   // width: 100%;
   // background: lightgray;
@@ -84,7 +96,7 @@
   flex-direction: row;
   padding: 10px 20px 5px 20px;
   transition:all 0.4s ease;
-  height: 200px;
+  height: 180px;
   opacity: 1;
   // width: 100%;
   // background: lightgray;

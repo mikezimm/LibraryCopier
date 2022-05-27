@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styles from './ModernCreator.module.scss';
-import { clearSearchState, IAllTextBoxTypes, IAnyContent, ICreateThesePages, IModernCreatorProps, IModernCreatorState, ISearchLocations, ISearchState, ISourceOrDest, IValidWebParts, validSearchLocations, ValidWebParts } from './IModernCreatorProps';
+import { clearSearchState, IAllTextBoxTypes, IAnyContent, ICreateThesePages, IModernCreatorProps, IModernCreatorState, IOtherOptions, ISearchLocations, ISearchState, ISourceOrDest, IValidWebParts, OtherOptions, validSearchLocations, ValidWebParts } from './IModernCreatorProps';
 import { sp, Views, IViews, ISite } from "@pnp/sp/presets/all";
 
 import { Toggle } from 'office-ui-fabric-react/lib/Toggle';
@@ -44,6 +44,8 @@ export const iconStyles: any = { root: {
 export const BaseErrorTrace = `ModernCreator|${ strings.analyticsWeb }|${ strings.analyticsList }`;
 
 const defToggleStyle = { root: { width: 160, } };
+
+const optToggleStyle = { root: { width: 250, } };
 
 export default class ModernCreator extends React.Component<IModernCreatorProps, IModernCreatorState> {
 
@@ -194,6 +196,9 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
         sourcePickedWeb: null,
         destPickedWeb: null,
         sourceLib: this.lastSourceLib,
+
+        replaceWebUrls: true,
+        markImagesAndLinks: true,
 
         pageInfo: {
           add: true,
@@ -411,15 +416,27 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     const webPartInput = ValidWebParts.map( webpart => {
       const textBox = this.createWebInput( webpart );
-      const toggle = <Toggle label={ `Add ${webpart} to page` } 
-        onChange={ () => { this.toggleWebPartsInfo( webpart ) ; } } 
+      const toggle = <Toggle label={ `Add ${webpart} to page` }
+        onChange={ () => { this.toggleWebPartsInfo( webpart ) ; } }
         checked={ this.state.copyProps[webpart].add }
         styles={ defToggleStyle }
       />;
 
       return <div>
-        { toggle } 
-        { textBox } 
+        { toggle }
+        { textBox }
+      </div>;
+
+    });
+
+    const optionalToggles = OtherOptions.map( option => {
+      const toggle = <Toggle label={ `${option}` }
+        onChange={ () => { this.toggleOptions( option ) ; } }
+        checked={ this.state.copyProps[option] }
+        styles={ optToggleStyle }
+      />;
+      return <div>
+        { toggle }
       </div>;
 
     });
@@ -444,12 +461,18 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
             <div className={ [ styles.replaceInfo, this.state.showFilters === false ? styles.hideInfo : null ].join( ' ') }>
               { searchBoxs }
             </div>
-            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleReplace.bind(this)} >Replace string in all content - Case Sensitive</div>
-            <div className={ [ styles.replaceInfo, this.state.showReplace === false ? styles.hideInfo : null ].join( ' ') }>
-              { replaceString }
-              { withString }
+            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleReplace.bind(this)} >Replace content - Case Sensitive</div>
+            <div className={ [ styles.allReplaceInfo, this.state.showReplace === false ? styles.hideInfo : null ].join( ' ') }>
+              <div className={ [ styles.replaceInfo ].join( ' ') }>
+                { replaceString }
+                { withString }
+              </div>
+              <div className={ [ styles.replaceInfo ].join( ' ') }>
+                { optionalToggles }
+              </div>
             </div>
-            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleWebParts.bind(this)} >Web parts</div>
+
+            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleWebParts.bind(this)} >Webparts</div>
             <div className={ [ styles.webPartsInfo, this.state.showWebParts === false ? styles.hideInfo : null ].join( ' ') } style={{ display: 'flex' }}>
               {/* { `Add Webpart Toggles here` } */}
               { webPartInput }
@@ -654,6 +677,12 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
   private toggleWebPartsInfo( webpart: IValidWebParts ) {
     let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
     copyProps[webpart].add = copyProps[webpart].add === true ? false : true;
+    this.setState({ copyProps: copyProps });
+  }
+
+  private toggleOptions( option: IOtherOptions ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+    copyProps[option] = copyProps[option] === true ? false : true;
     this.setState({ copyProps: copyProps });
   }
 
