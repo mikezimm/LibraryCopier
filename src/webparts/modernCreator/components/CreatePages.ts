@@ -30,6 +30,19 @@ import { IAnyContent, ICreateThesePages, ISearchState } from './IModernCreatorPr
 import { divide } from 'lodash';
 import { isValidElement } from 'react';
 
+export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
+
+/***
+ *     .o88b.  .d88b.  d8b   db .d8888. d888888b      db    db d88888b d8888b. d888888b d88888b db    db 
+ *    d8P  Y8 .8P  Y8. 888o  88 88'  YP `~~88~~'      88    88 88'     88  `8D   `88'   88'     `8b  d8' 
+ *    8P      88    88 88V8o 88 `8bo.      88         Y8    8P 88ooooo 88oobY'    88    88ooo    `8bd8'  
+ *    8b      88    88 88 V8o88   `Y8b.    88         `8b  d8' 88~~~~~ 88`8b      88    88~~~      88    
+ *    Y8b  d8 `8b  d8' 88  V888 db   8D    88          `8bd8'  88.     88 `88.   .88.   88         88    
+ *     `Y88P'  `Y88P'  VP   V8P `8888Y'    YP            YP    Y88888P 88   YD Y888888P YP         YP    
+ *                                                                                                       
+ *                                                                                                       
+ */
+
 //Font sizes:  24px:  fontSizeXLargePlus,  28px:  fontSizeXxLarge
 const VerifyDiv = `<div>
   <span class="highlightColorYellow">
@@ -52,7 +65,18 @@ const VerifyAtt = `
   </span>`;
 
 
-export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
+
+/***
+ *    db      d888888b d8b   db db   dD      d888888b .d8888.      db    db  .d8b.  db      d888888b d8888b. 
+ *    88        `88'   888o  88 88 ,8P'        `88'   88'  YP      88    88 d8' `8b 88        `88'   88  `8D 
+ *    88         88    88V8o 88 88,8P           88    `8bo.        Y8    8P 88ooo88 88         88    88   88 
+ *    88         88    88 V8o88 88`8b           88      `Y8b.      `8b  d8' 88~~~88 88         88    88   88 
+ *    88booo.   .88.   88  V888 88 `88.        .88.   db   8D       `8bd8'  88   88 88booo.   .88.   88  .8D 
+ *    Y88888P Y888888P VP   V8P YP   YD      Y888888P `8888Y'         YP    YP   YP Y88888P Y888888P Y8888D' 
+ *                                                                                                           
+ *                                                                                                           
+ */
+
 
 export async function _LinkIsValid(url)
 {
@@ -72,6 +96,17 @@ export async function _LinkIsValid(url)
     return isValid;
 } 
 
+/***
+ *    d8888b.  .d8b.  .d8888. .d8888.      .d8888. d88888b  .d8b.  d8888b.  .o88b. db   db 
+ *    88  `8D d8' `8b 88'  YP 88'  YP      88'  YP 88'     d8' `8b 88  `8D d8P  Y8 88   88 
+ *    88oodD' 88ooo88 `8bo.   `8bo.        `8bo.   88ooooo 88ooo88 88oobY' 8P      88ooo88 
+ *    88~~~   88~~~88   `Y8b.   `Y8b.        `Y8b. 88~~~~~ 88~~~88 88`8b   8b      88~~~88 
+ *    88      88   88 db   8D db   8D      db   8D 88.     88   88 88 `88. Y8b  d8 88   88 
+ *    88      YP   YP `8888Y' `8888Y'      `8888Y' Y88888P YP   YP 88   YD  `Y88P' YP   YP 
+ *                                                                                         
+ *                                                                                         
+ */
+
 export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
   let passSearch = true;
@@ -90,6 +125,17 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
   return passSearch;
 
 }
+
+/***
+ *     .o88b. d8888b. d88888b  .d8b.  d888888b d88888b      d8888b.  .d8b.   d888b  d88888b 
+ *    d8P  Y8 88  `8D 88'     d8' `8b `~~88~~' 88'          88  `8D d8' `8b 88' Y8b 88'     
+ *    8P      88oobY' 88ooooo 88ooo88    88    88ooooo      88oodD' 88ooo88 88      88ooooo 
+ *    8b      88`8b   88~~~~~ 88~~~88    88    88~~~~~      88~~~   88~~~88 88  ooo 88~~~~~ 
+ *    Y8b  d8 88 `88. 88.     88   88    88    88.          88      88   88 88. ~8~ 88.     
+ *     `Y88P' 88   YD Y88888P YP   YP    YP    Y88888P      88      YP   YP  Y888P  Y88888P 
+ *                                                                                          
+ *                                                                                          
+ */
 
  export async function createMirrorPage( items: IAnyContent[], updateProgress: any ){
 
@@ -119,6 +165,18 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
     }
 
  }
+
+
+ /***
+ *    db    db d8888b. d8888b.  .d8b.  d888888b d88888b      .88b  d88. d888888b d8888b. d8888b.  .d88b.  d8888b. 
+ *    88    88 88  `8D 88  `8D d8' `8b `~~88~~' 88'          88'YbdP`88   `88'   88  `8D 88  `8D .8P  Y8. 88  `8D 
+ *    88    88 88oodD' 88   88 88ooo88    88    88ooooo      88  88  88    88    88oobY' 88oobY' 88    88 88oobY' 
+ *    88    88 88~~~   88   88 88~~~88    88    88~~~~~      88  88  88    88    88`8b   88`8b   88    88 88`8b   
+ *    88b  d88 88      88  .8D 88   88    88    88.          88  88  88   .88.   88 `88. 88 `88. `8b  d8' 88 `88. 
+ *    ~Y8888P' 88      Y8888D' YP   YP    YP    Y88888P      YP  YP  YP Y888888P 88   YD 88   YD  `Y88P'  88   YD 
+ *                                                                                                                
+ *                                                                                                                
+ */
 
  export async function updateMirrorPage( copyProps: ICreateThesePages, items: IAnyContent[], updateProgress: any, search: ISearchState ){
 
@@ -157,7 +215,19 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
   
   const FPSPageInfo = partDefs.filter(c => c.Name === "FPS Page Info - TOC & Props");
   const PivotTiles = partDefs.filter(c => c.Name.indexOf('Pivot Tiles') > -1 );
+  const ImageWebPart = partDefs.filter(c => c.Id === "d1d91016-032f-456d-98a4-721247c305e8");
 
+
+  /***
+ *    db       .d88b.   .d88b.  d8888b.      d8888b.  .d8b.   d888b  d88888b .d8888. 
+ *    88      .8P  Y8. .8P  Y8. 88  `8D      88  `8D d8' `8b 88' Y8b 88'     88'  YP 
+ *    88      88    88 88    88 88oodD'      88oodD' 88ooo88 88      88ooooo `8bo.   
+ *    88      88    88 88    88 88~~~        88~~~   88~~~88 88  ooo 88~~~~~   `Y8b. 
+ *    88booo. `8b  d8' `8b  d8' 88           88      88   88 88. ~8~ 88.     db   8D 
+ *    Y88888P  `Y88P'   `Y88P'  88           88      YP   YP  Y888P  Y88888P `8888Y' 
+ *                                                                                   
+ *                                                                                   
+ */
   for ( var i = 0; i < items.length; i++ ) {
 
       let webPartNotes: any[] = [];
@@ -190,6 +260,19 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
           let comments = [];
 
+
+
+          /***
+           *    .88b  d88. d88888b d88888b d888888b .d8888.      .d8888. d88888b  .d8b.  d8888b.  .o88b. db   db      d8b   db  .d88b.  d888888b 
+           *    88'YbdP`88 88'     88'     `~~88~~' 88'  YP      88'  YP 88'     d8' `8b 88  `8D d8P  Y8 88   88      888o  88 .8P  Y8. `~~88~~' 
+           *    88  88  88 88ooooo 88ooooo    88    `8bo.        `8bo.   88ooooo 88ooo88 88oobY' 8P      88ooo88      88V8o 88 88    88    88    
+           *    88  88  88 88~~~~~ 88~~~~~    88      `Y8b.        `Y8b. 88~~~~~ 88~~~88 88`8b   8b      88~~~88      88 V8o88 88    88    88    
+           *    88  88  88 88.     88.        88    db   8D      db   8D 88.     88   88 88 `88. Y8b  d8 88   88      88  V888 `8b  d8'    88    
+           *    YP  YP  YP Y88888P Y88888P    YP    `8888Y'      `8888Y' Y88888P YP   YP 88   YD  `Y88P' YP   YP      VP   V8P  `Y88P'     YP    
+           *                                                                                                                                     
+           *                                                                                                                                     
+           */
+
           if ( item.meetsSearch === false ) {
             //Skipping because it does not meet search
             item.copiedPage = false;
@@ -202,6 +285,17 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             skips.push( item );
             // filtered.push( item );
 
+
+          /***
+           *    .88b  d88. d88888b d88888b d888888b .d8888.      .d8888. d88888b  .d8b.  d8888b.  .o88b. db   db 
+           *    88'YbdP`88 88'     88'     `~~88~~' 88'  YP      88'  YP 88'     d8' `8b 88  `8D d8P  Y8 88   88 
+           *    88  88  88 88ooooo 88ooooo    88    `8bo.        `8bo.   88ooooo 88ooo88 88oobY' 8P      88ooo88 
+           *    88  88  88 88~~~~~ 88~~~~~    88      `Y8b.        `Y8b. 88~~~~~ 88~~~88 88`8b   8b      88~~~88 
+           *    88  88  88 88.     88.        88    db   8D      db   8D 88.     88   88 88 `88. Y8b  d8 88   88 
+           *    YP  YP  YP Y88888P Y88888P    YP    `8888Y'      `8888Y' Y88888P YP   YP 88   YD  `Y88P' YP   YP 
+           *                                                                                                     
+           *                                                                                                     
+           */
           } else {
             const maps = [ 3,2,1];
             maps.map( idx => {
@@ -218,6 +312,18 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               }
 
             });
+
+
+            /***
+             *    db      d888888b d8b   db db   dD .d8888.      .d888b.       d888888b .88b  d88.  .d8b.   d888b  d88888b .d8888. 
+             *    88        `88'   888o  88 88 ,8P' 88'  YP      8P   8D         `88'   88'YbdP`88 d8' `8b 88' Y8b 88'     88'  YP 
+             *    88         88    88V8o 88 88,8P   `8bo.        `Vb d8'          88    88  88  88 88ooo88 88      88ooooo `8bo.   
+             *    88         88    88 V8o88 88`8b     `Y8b.       d88C dD         88    88  88  88 88~~~88 88  ooo 88~~~~~   `Y8b. 
+             *    88booo.   .88.   88  V888 88 `88. db   8D      C8' d8D         .88.   88  88  88 88   88 88. ~8~ 88.     db   8D 
+             *    Y88888P Y888888P VP   V8P YP   YD `8888Y'      `888P Yb      Y888888P YP  YP  YP YP   YP  Y888P  Y88888P `8888Y' 
+             *                                                                                                                     
+             *                                                                                                                     
+             */
 
             let sourceWebUrl = copyProps.sourcePickedWeb.ServerRelativeUrl.toLowerCase();
             let destWebUrl = copyProps.destPickedWeb.ServerRelativeUrl;
@@ -255,13 +361,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               newWikiField = newWikiField.replace( attRegex, `${VerifyAtt}<a `);
             }
 
-            if ( copyProps.replaceString ) {
-              const regexStringReplace = new RegExp( `${copyProps.replaceString}`, 'g' );
-              const replaceCount = newWikiField.split( copyProps.replaceString ).length -1;
-              newWikiField = newWikiField.replace( regexStringReplace, copyProps.withString );
-              webPartNotes.push( `Replaced ( ${replaceCount } times) this: '<b>${copyProps.replaceString}</b>' with this: '<b>${copyProps.withString}</b>'`);
-            }
-
+            
             const imageSplits = newWikiField.split('<img');
             update.images = imageSplits.length -1;
             if ( imageSplits.length > 1 ) { 
@@ -274,6 +374,25 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             item.h2 = update.h2.length;
             item.h3 = update.h3.length;
 
+            /***
+             *    d8888b. d88888b d8888b. db       .d8b.   .o88b. d88888b      .d8888. d888888b d8888b. d888888b d8b   db  d888b  .d8888. 
+             *    88  `8D 88'     88  `8D 88      d8' `8b d8P  Y8 88'          88'  YP `~~88~~' 88  `8D   `88'   888o  88 88' Y8b 88'  YP 
+             *    88oobY' 88ooooo 88oodD' 88      88ooo88 8P      88ooooo      `8bo.      88    88oobY'    88    88V8o 88 88      `8bo.   
+             *    88`8b   88~~~~~ 88~~~   88      88~~~88 8b      88~~~~~        `Y8b.    88    88`8b      88    88 V8o88 88  ooo   `Y8b. 
+             *    88 `88. 88.     88      88booo. 88   88 Y8b  d8 88.          db   8D    88    88 `88.   .88.   88  V888 88. ~8~ db   8D 
+             *    88   YD Y88888P 88      Y88888P YP   YP  `Y88P' Y88888P      `8888Y'    YP    88   YD Y888888P VP   V8P  Y888P  `8888Y' 
+             *                                                                                                                            
+             *                                                                                                                            
+             */
+
+            if ( copyProps.replaceString ) {
+              const regexStringReplace = new RegExp( `${copyProps.replaceString}`, 'g' );
+              const replaceCount = newWikiField.split( copyProps.replaceString ).length -1;
+              newWikiField = newWikiField.replace( regexStringReplace, copyProps.withString );
+              webPartNotes.push( `Replaced ( ${replaceCount } times) this: '<b>${copyProps.replaceString}</b>' with this: '<b>${copyProps.withString}</b>'`);
+            }
+
+
             // if ( currentWikiField.indexOf('<h3>') > -1 ) {
             //   let finds = [];
             //   let splits = newWikiField.split('<h3>').map( find=> {
@@ -282,6 +401,19 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             //   updates.h3 = finds;
             //   newWikiField = splits.join('<h4>').split('</h3>').join('</h4>');
             // }
+
+
+            /***
+             *     .o88b. d8888b. d88888b  .d8b.  d888888b d88888b      d8888b.  .d8b.   d888b  d88888b 
+             *    d8P  Y8 88  `8D 88'     d8' `8b `~~88~~' 88'          88  `8D d8' `8b 88' Y8b 88'     
+             *    8P      88oobY' 88ooooo 88ooo88    88    88ooooo      88oodD' 88ooo88 88      88ooooo 
+             *    8b      88`8b   88~~~~~ 88~~~88    88    88~~~~~      88~~~   88~~~88 88  ooo 88~~~~~ 
+             *    Y8b  d8 88 `88. 88.     88   88    88    88.          88      88   88 88. ~8~ 88.     
+             *     `Y88P' 88   YD Y88888P YP   YP    YP    Y88888P      88      YP   YP  Y888P  Y88888P 
+             *                                                                                          
+             *                                                                                          
+             */
+
 
             let page: IClientsidePage = null;
 
@@ -321,6 +453,17 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
             // add two columns with factor 6 - this is a two column layout as the total factor in a section should add up to 12
 
+            /***
+             *     .d8b.  d8888b. d8888b.      d8888b.  .d8b.   d888b  d88888b      d888888b d8b   db d88888b  .d88b.  
+             *    d8' `8b 88  `8D 88  `8D      88  `8D d8' `8b 88' Y8b 88'            `88'   888o  88 88'     .8P  Y8. 
+             *    88ooo88 88   88 88   88      88oodD' 88ooo88 88      88ooooo         88    88V8o 88 88ooo   88    88 
+             *    88~~~88 88   88 88   88      88~~~   88~~~88 88  ooo 88~~~~~         88    88 V8o88 88~~~   88    88 
+             *    88   88 88  .8D 88  .8D      88      88   88 88. ~8~ 88.            .88.   88  V888 88      `8b  d8' 
+             *    YP   YP Y8888D' Y8888D'      88      YP   YP  Y888P  Y88888P      Y888888P VP   V8P YP       `Y88P'  
+             *                                                                                                         
+             *                                                                                                         
+             */
+
             if ( copyProps.pageInfo.add !== true  ) {
               //Do nothing
 
@@ -349,6 +492,17 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 webPartNotes.push( 'Had ISSUE adding Page Info web part to the page.' );
               }
             }
+
+            /***
+             *     .d8b.  d8888b. d8888b.      d888888b d888888b db      d88888b .d8888. 
+             *    d8' `8b 88  `8D 88  `8D      `~~88~~'   `88'   88      88'     88'  YP 
+             *    88ooo88 88   88 88   88         88       88    88      88ooooo `8bo.   
+             *    88~~~88 88   88 88   88         88       88    88      88~~~~~   `Y8b. 
+             *    88   88 88  .8D 88  .8D         88      .88.   88booo. 88.     db   8D 
+             *    YP   YP Y8888D' Y8888D'         YP    Y888888P Y88888P Y88888P `8888Y' 
+             *                                                                           
+             *                                                                           
+             */
 
             //PivotTilesTeamsDefaults              if ( PivotTiles.length === 0 ) {
             if ( copyProps.pivotTiles.add !== true  ) {
@@ -379,6 +533,33 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               }
             }
 
+            const imagePart = ClientsideWebpart.fromComponentDef(ImageWebPart[0]);
+            imagePart.setProperties<any>( ImageWebPartDefaults );
+            imagePart.setServerProcessedContent<any>({
+               imageSources: { imageSource: `/sites/FinanceManual/Manual/SiteCollectionImages/StandardDocuments/Leasing%20policy/bild10.PNG` }
+            });
+
+            page.addSection().addControl(imagePart);
+            /**
+             *             
+            https://github.com/pnp/pnpjs/issues/1871#issuecomment-942444378
+            ImageWebPart.setProperties<any>({
+              imageSourceType: 2,
+              overlayText: '',
+              imgWidth: "100%",
+              imgHeight: "100%",
+              fixAspectRatio: false,
+              isOverlayTextEnabled: false,
+              altText: ''
+            });
+            ImageWebPart.setServerProcessedContent<any>({
+               imageSources: { imageSource: this.state.selectedImageSlides.ServerRelativeUrl }
+            });
+
+            page.addSection().addControl(ImageWebPart);
+             */
+
+
             try {
               const section2 = page.addSection().addControl(new ClientsideText(newWikiField));
               update.sections.push( 'Added sectionL Text Content');
@@ -386,6 +567,18 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               comments.push('FAILED sectionL Text Content');
               update.sections.push( 'FAILED sectionL Text Content');
             }
+
+
+            /***
+             *     .d8b.  d8888b. d8888b.      d8b   db  .d88b.  d888888b d88888b .d8888. 
+             *    d8' `8b 88  `8D 88  `8D      888o  88 .8P  Y8. `~~88~~' 88'     88'  YP 
+             *    88ooo88 88   88 88   88      88V8o 88 88    88    88    88ooooo `8bo.   
+             *    88~~~88 88   88 88   88      88 V8o88 88    88    88    88~~~~~   `Y8b. 
+             *    88   88 88  .8D 88  .8D      88  V888 `8b  d8'    88    88.     db   8D 
+             *    YP   YP Y8888D' Y8888D'      VP   V8P  `Y88P'     YP    Y88888P `8888Y' 
+             *                                                                            
+             *                                                                            
+             */
 
             try {
 
@@ -448,6 +641,17 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
           }
 
+          /***
+           *    db    db d8888b. d8888b.  .d8b.  d888888b d88888b      d8888b. d8888b.  .d88b.   d888b  d8888b. d88888b .d8888. .d8888. 
+           *    88    88 88  `8D 88  `8D d8' `8b `~~88~~' 88'          88  `8D 88  `8D .8P  Y8. 88' Y8b 88  `8D 88'     88'  YP 88'  YP 
+           *    88    88 88oodD' 88   88 88ooo88    88    88ooooo      88oodD' 88oobY' 88    88 88      88oobY' 88ooooo `8bo.   `8bo.   
+           *    88    88 88~~~   88   88 88~~~88    88    88~~~~~      88~~~   88`8b   88    88 88  ooo 88`8b   88~~~~~   `Y8b.   `Y8b. 
+           *    88b  d88 88      88  .8D 88   88    88    88.          88      88 `88. `8b  d8' 88. ~8~ 88 `88. 88.     db   8D db   8D 
+           *    ~Y8888P' 88      Y8888D' YP   YP    YP    Y88888P      88      88   YD  `Y88P'   Y888P  88   YD Y88888P `8888Y' `8888Y' 
+           *                                                                                                                            
+           *                                                                                                                            
+           */
+
           item.result = webPartNotes;
           //updateProgress( latest: any, copyProps: ICreateThesePages, item: IAnyContent, result: string )
           let itemCount = i + 1;
@@ -461,6 +665,17 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
       }//end for all items
   }
 
+
+  /***
+ *     d888b  d88888b d888888b       .o88b. db       .d8b.  .d8888. .d8888. d888888b  .o88b. 
+ *    88' Y8b 88'     `~~88~~'      d8P  Y8 88      d8' `8b 88'  YP 88'  YP   `88'   d8P  Y8 
+ *    88      88ooooo    88         8P      88      88ooo88 `8bo.   `8bo.      88    8P      
+ *    88  ooo 88~~~~~    88         8b      88      88~~~88   `Y8b.   `Y8b.    88    8b      
+ *    88. ~8~ 88.        88         Y8b  d8 88booo. 88   88 db   8D db   8D   .88.   Y8b  d8 
+ *     Y888P  Y88888P    YP          `Y88P' Y88888P YP   YP `8888Y' `8888Y' Y888888P  `Y88P' 
+ *                                                                                           
+ *                                                                                           
+ */
  //Standards are really site pages, supporting docs are files
  export async function getClassicContent( copyProps: ICreateThesePages, updateProgress: any, search: ISearchState ) {
 
@@ -517,6 +732,40 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
   }
 
+
+/***
+ *    db   d8b   db d88888b d8888b.      d8888b.  .d8b.  d8888b. d888888b      d8888b. d88888b d88888b  .d8b.  db    db db      d888888b 
+ *    88   I8I   88 88'     88  `8D      88  `8D d8' `8b 88  `8D `~~88~~'      88  `8D 88'     88'     d8' `8b 88    88 88      `~~88~~' 
+ *    88   I8I   88 88ooooo 88oooY'      88oodD' 88ooo88 88oobY'    88         88   88 88ooooo 88ooo   88ooo88 88    88 88         88    
+ *    Y8   I8I   88 88~~~~~ 88~~~b.      88~~~   88~~~88 88`8b      88         88   88 88~~~~~ 88~~~   88~~~88 88    88 88         88    
+ *    `8b d8'8b d8' 88.     88   8D      88      88   88 88 `88.    88         88  .8D 88.     88      88   88 88b  d88 88booo.    88    
+ *     `8b8' `8d8'  Y88888P Y8888P'      88      YP   YP 88   YD    YP         Y8888D' Y88888P YP      YP   YP ~Y8888P' Y88888P    YP    
+ *                                                                                                                                       
+ *                                                                                                                                       
+ */
+
+const ImageWebPartDefaults: any = {
+  imageSourceType: 2,
+  overlayText: '',
+  imgWidth: "100%",
+  imgHeight: "100%",
+  fixAspectRatio: false,
+  isOverlayTextEnabled: false,
+  altText: ''
+};
+
+
+/***
+ *    d8888b.  .d8b.   d888b  d88888b      d888888b d8b   db d88888b  .d88b.       d8888b. d8888b.  .d88b.  d8888b. .d8888. 
+ *    88  `8D d8' `8b 88' Y8b 88'            `88'   888o  88 88'     .8P  Y8.      88  `8D 88  `8D .8P  Y8. 88  `8D 88'  YP 
+ *    88oodD' 88ooo88 88      88ooooo         88    88V8o 88 88ooo   88    88      88oodD' 88oobY' 88    88 88oodD' `8bo.   
+ *    88~~~   88~~~88 88  ooo 88~~~~~         88    88 V8o88 88~~~   88    88      88~~~   88`8b   88    88 88~~~     `Y8b. 
+ *    88      88   88 88. ~8~ 88.            .88.   88  V888 88      `8b  d8'      88      88 `88. `8b  d8' 88      db   8D 
+ *    88      YP   YP  Y888P  Y88888P      Y888888P VP   V8P YP       `Y88P'       88      88   YD  `Y88P'  88      `8888Y' 
+ *                                                                                                                          
+ *                                                                                                                          
+ */
+
 const FPSPageInfoDefaults: any = {
   "description": "FPS Page Info - TOC & Props",
 
@@ -554,7 +803,16 @@ const FPSPageInfoDefaults: any = {
 
 };
 
-
+/***
+ *    d8888b. d888888b db    db  .d88b.  d888888b      d888888b d888888b db      d88888b .d8888.      d8888b. d8888b.  .d88b.  d8888b. .d8888. 
+ *    88  `8D   `88'   88    88 .8P  Y8. `~~88~~'      `~~88~~'   `88'   88      88'     88'  YP      88  `8D 88  `8D .8P  Y8. 88  `8D 88'  YP 
+ *    88oodD'    88    Y8    8P 88    88    88            88       88    88      88ooooo `8bo.        88oodD' 88oobY' 88    88 88oodD' `8bo.   
+ *    88~~~      88    `8b  d8' 88    88    88            88       88    88      88~~~~~   `Y8b.      88~~~   88`8b   88    88 88~~~     `Y8b. 
+ *    88        .88.    `8bd8'  `8b  d8'    88            88      .88.   88booo. 88.     db   8D      88      88 `88. `8b  d8' 88      db   8D 
+ *    88      Y888888P    YP     `Y88P'     YP            YP    Y888888P Y88888P Y88888P `8888Y'      88      88   YD  `Y88P'  88      `8888Y' 
+ *                                                                                                                                             
+ *                                                                                                                                             
+ */
 const PivotTilesTeamsDefaults: any = {
   "scenario": "TEAM",
   "showBanner": true,
