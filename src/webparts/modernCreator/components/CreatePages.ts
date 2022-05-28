@@ -43,8 +43,9 @@ export const linkNoLeadingTarget = /<a[\s\S]*?href=/gim;   //
  *                                                                                                       
  */
 
+const VerifyReplaceString = 'VerifyImageUrl';
 //Font sizes:  24px:  fontSizeXLargePlus,  28px:  fontSizeXxLarge
-const VerifyDiv = `<div>
+const VerifyImg = `<div>
   <span class="highlightColorYellow">
     <span class="fontColorRed">
       <strong>
@@ -52,7 +53,16 @@ const VerifyDiv = `<div>
       </strong>
     </span>
   </span>
-</div>`;
+</div><div>
+<span class="highlightColorYellow">
+  <span class="fontColorRed">
+    <strong>
+      <span class="fontSizeLarge">${VerifyReplaceString}</span>
+    </strong>
+  </span>
+</span>
+</div><br><br>
+`;
 
 //Font sizes:  24px:  fontSizeXLargePlus,  28px:  fontSizeXxLarge
 const VerifyAtt = `
@@ -357,7 +367,9 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               const attRegex = new RegExp( '\<a ', 'gmi');
               const foundImages = newWikiField.match( imgRegex );
               const foundLinks = newWikiField.match( attRegex );
-              newWikiField = newWikiField.replace( imgRegex, `${VerifyDiv}<img ` );
+
+              //This adds the warning box above any image tags
+              // newWikiField = newWikiField.replace( imgRegex, `${VerifyImg}<img ` );
               newWikiField = newWikiField.replace( attRegex, `${VerifyAtt}<a `);
             }
 
@@ -533,35 +545,78 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               }
             }
 
-            const imagePart = ClientsideWebpart.fromComponentDef(ImageWebPart[0]);
-            imagePart.setProperties<any>( ImageWebPartDefaults );
-            imagePart.setServerProcessedContent<any>({
-               imageSources: { imageSource: `/sites/FinanceManual/Manual/SiteCollectionImages/StandardDocuments/Leasing%20policy/bild10.PNG` }
+          /***
+           *     .d8b.  d8888b. d8888b.       .o88b.  .d88b.  d8b   db d888888b d88888b d8b   db d888888b 
+           *    d8' `8b 88  `8D 88  `8D      d8P  Y8 .8P  Y8. 888o  88 `~~88~~' 88'     888o  88 `~~88~~' 
+           *    88ooo88 88   88 88   88      8P      88    88 88V8o 88    88    88ooooo 88V8o 88    88    
+           *    88~~~88 88   88 88   88      8b      88    88 88 V8o88    88    88~~~~~ 88 V8o88    88    
+           *    88   88 88  .8D 88  .8D      Y8b  d8 `8b  d8' 88  V888    88    88.     88  V888    88    
+           *    YP   YP Y8888D' Y8888D'       `Y88P'  `Y88P'  VP   V8P    YP    Y88888P VP   V8P    YP    
+           *                                                                                              
+           *                                                                                              
+           */
+
+          //This attemps to remove the table on pages found in financial manual
+            const hasFirstLayoutsZoneInner = newWikiField.indexOf('layoutszone-inner') ;
+            if ( hasFirstLayoutsZoneInner > -1 ) {
+              const openInnerPos = newWikiField.indexOf( '>', hasFirstLayoutsZoneInner );
+
+              const hasLastLayoutsZoneInner = newWikiField.lastIndexOf('layoutszone-inner') ;
+              const closeInnerPos = newWikiField.lastIndexOf( '>', hasLastLayoutsZoneInner );
+
+              newWikiField = newWikiField.substring( openInnerPos + 1, closeInnerPos + 1 );
+              newWikiField = newWikiField.replace('<td class="ms-wiki-columnSpacing" style="width:33.3%;"><div class="ms-rte-layoutszone-outer" style="width:100%;">','');
+              newWikiField = '<div>' + newWikiField + '</div>';
+              console.log( `modified ewWikiField`, newWikiField );
+
+            }
+
+            const wikiSplits = newWikiField.split('<img ' );
+            let newSplits = [];
+            let imageUrls = [];
+
+            wikiSplits.map( ( content, idx ) => {
+              let newContent = content;
+              let thisImageUrl = '';
+              let src1 = content.indexOf('src="');
+              if ( src1 > -1 ) { 
+                let quote2 = content.indexOf( '"', src1 + 5 );
+                thisImageUrl = content.substring( src1  + 5, quote2 );
+                imageUrls.push( window.location.origin + thisImageUrl );
+              }
+
+              //Add back the image tag removed in the split
+              const warningElement = VerifyImg.replace( VerifyReplaceString, thisImageUrl );
+              if ( idx > 0 ) { newContent = warningElement + '<img ' + content; }
+
+              newSplits.push( newContent ) ;
+
             });
 
-            page.addSection().addControl(imagePart);
-            /**
-             *             
-            https://github.com/pnp/pnpjs/issues/1871#issuecomment-942444378
-            ImageWebPart.setProperties<any>({
-              imageSourceType: 2,
-              overlayText: '',
-              imgWidth: "100%",
-              imgHeight: "100%",
-              fixAspectRatio: false,
-              isOverlayTextEnabled: false,
-              altText: ''
-            });
-            ImageWebPart.setServerProcessedContent<any>({
-               imageSources: { imageSource: this.state.selectedImageSlides.ServerRelativeUrl }
-            });
+            //Rejoin newWikiField with embedded warnings
+            newWikiField = newSplits.join('');
 
-            page.addSection().addControl(ImageWebPart);
-             */
+            if ( copyProps.addImageWebParts === true ) {
+              const section2 = page.addSection();
+              imageUrls.map( ( url, idx ) => {
+  
+                const imagePartX = ClientsideWebpart.fromComponentDef(ImageWebPart[0]);
+                imagePartX.setProperties<any>( ImageWebPartDefaults );
+                imagePartX.setServerProcessedContent<any>({
+                    imageSources: { imageSource: url }
+                });
+                let placeholderText = VerifyImg.replace( VerifyReplaceString, url ? url : 'Did not detect an image Url :(' ); 
+                section2.addControl(new ClientsideText(placeholderText));
+                section2.addControl(imagePartX);
+  
+              });
+  
+            }
 
+            console.log( 'wikiSplits:', newSplits );
 
             try {
-              const section2 = page.addSection().addControl(new ClientsideText(newWikiField));
+              const section3 = page.addSection().addControl(new ClientsideText(newWikiField));
               update.sections.push( 'Added sectionL Text Content');
             } catch {
               comments.push('FAILED sectionL Text Content');
@@ -610,7 +665,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
               </div>`;
 
-              const section3 = page.addSection().addControl(new ClientsideText( logHTML ));
+              const section4 = page.addSection().addControl(new ClientsideText( logHTML ));
               update.sections.push( 'Added script log section');
 
             } catch {

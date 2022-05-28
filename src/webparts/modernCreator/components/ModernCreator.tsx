@@ -199,6 +199,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
         replaceWebUrls: true,
         markImagesAndLinks: true,
+        addImageWebParts: true,
 
         pageInfo: {
           add: true,
