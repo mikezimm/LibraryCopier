@@ -74,6 +74,12 @@ const VerifyAtt = `
     </span>
   </span>`;
 
+  const MigrationLog = `<div>
+      <strong>
+        <span class="fontSizeXxLarge">Page Migration log ...</span>
+      </strong>
+    </div>
+`;
 
 
 /***
@@ -567,7 +573,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               newWikiField = newWikiField.substring( openInnerPos + 1, closeInnerPos + 1 );
               newWikiField = newWikiField.replace('<td class="ms-wiki-columnSpacing" style="width:33.3%;"><div class="ms-rte-layoutszone-outer" style="width:100%;">','');
               newWikiField = '<div>' + newWikiField + '</div>';
-              console.log( `modified ewWikiField`, newWikiField );
+              // console.log( `modified ewWikiField`, newWikiField );
 
             }
 
@@ -615,15 +621,6 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
             console.log( 'wikiSplits:', newSplits );
 
-            try {
-              const section3 = page.addSection().addControl(new ClientsideText(newWikiField));
-              update.sections.push( 'Added sectionL Text Content');
-            } catch {
-              comments.push('FAILED sectionL Text Content');
-              update.sections.push( 'FAILED sectionL Text Content');
-            }
-
-
             /***
              *     .d8b.  d8888b. d8888b.      d8b   db  .d88b.  d888888b d88888b .d8888. 
              *    d8' `8b 88  `8D 88  `8D      888o  88 .8P  Y8. `~~88~~' 88'     88'  YP 
@@ -653,16 +650,17 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 `<div>Highighted all links and image tags on the page</br> &nbsp;&nbsp;&nbsp; so you can more easily find and verify them.</div>`;
                 if ( copyProps.markImagesAndLinks === true ) webPartNotes.push( markImagesAndLinks );
 
-              const logHTML = `<div>
-                
+              const imageWebParts = `<div>Images to verify - CTRL-Click to open in new window:</div><div><ul>${ imageUrls.map( note => { return `<li><a href="${ note }">${ note.replace(window.location.origin, '') }<a></li>` ; } ).join('') }</ul></div>`;
+
+              const logHTML = `<h2>Page Migration log :)</h2><div>
+
                 <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
                 <div>via script at: ${ rightNow.toUTCString() }</div>
                 <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
                 <div>Results</div>
                 <div><ol>${ webPartNotes.map( note => { return `<li>${ note }</li>` ; } ).join('') }</ol></div>
                 <div>Links found: ${ update.links }</div>
-                <div>Images found: ${ update.images }</div>
-
+                ${ imageWebParts }
               </div>`;
 
               const section4 = page.addSection().addControl(new ClientsideText( logHTML ));
@@ -674,6 +672,14 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             }
 
             try {
+              const section3 = page.addSection().addControl(new ClientsideText(newWikiField));
+              update.sections.push( 'Added sectionL Text Content');
+            } catch {
+              comments.push('FAILED sectionL Text Content');
+              update.sections.push( 'FAILED sectionL Text Content');
+            }
+
+            try {
               await page.save();
               update.saved = true;
 
@@ -681,6 +687,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               comments.push('FAILED SAVE');
             }
 
+            
             // filtered.push( item );
           } //End Meets search
 
