@@ -388,9 +388,9 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
             item.links = update.links;
             item.images = update.images;
-            item.h1 = update.h1.length;
-            item.h2 = update.h2.length;
-            item.h3 = update.h3.length;
+            item.h1 = update['<h1'] ? update['<h1'].length : 0;
+            item.h2 = update['<h2'] ? update['<h2'].length : 0;
+            item.h3 = update['<h3'] ? update['<h3'].length : 0;
 
             /***
              *    d8888b. d88888b d8888b. db       .d8b.   .o88b. d88888b      .d8888. d888888b d8888b. d888888b d8b   db  d888b  .d8888. 
@@ -563,19 +563,24 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
            */
 
           //This attemps to remove the table on pages found in financial manual
-            const hasFirstLayoutsZoneInner = newWikiField.indexOf('layoutszone-inner') ;
-            if ( hasFirstLayoutsZoneInner > -1 ) {
-              const openInnerPos = newWikiField.indexOf( '>', hasFirstLayoutsZoneInner );
-
-              const hasLastLayoutsZoneInner = newWikiField.lastIndexOf('layoutszone-inner') ;
-              const closeInnerPos = newWikiField.lastIndexOf( '>', hasLastLayoutsZoneInner );
-
-              newWikiField = newWikiField.substring( openInnerPos + 1, closeInnerPos + 1 );
-              newWikiField = newWikiField.replace('<td class="ms-wiki-columnSpacing" style="width:33.3%;"><div class="ms-rte-layoutszone-outer" style="width:100%;">','');
-              newWikiField = '<div>' + newWikiField + '</div>';
-              // console.log( `modified ewWikiField`, newWikiField );
-
+            if ( copyProps.removeLayoutsZoneInner === true ) {
+              const hasFirstLayoutsZoneInner = newWikiField.indexOf('layoutszone-inner') ;
+              if ( hasFirstLayoutsZoneInner > -1 ) {
+                const openInnerPos = newWikiField.indexOf( '>', hasFirstLayoutsZoneInner );
+  
+                const hasLastLayoutsZoneInner = newWikiField.lastIndexOf('layoutszone-inner') ;
+                const closeInnerPos = newWikiField.lastIndexOf( '>', hasLastLayoutsZoneInner );
+  
+                newWikiField = newWikiField.substring( openInnerPos + 1, closeInnerPos + 1 );
+                console.log('newWikiField ~ 575:' , newWikiField );
+                newWikiField = newWikiField.replace('<td class="ms-wiki-columnSpacing" style="width:33.3%;"><div class="ms-rte-layoutszone-outer" style="width:100%;">','');
+                console.log('newWikiField ~ 577:' , newWikiField );
+                newWikiField = '<div>' + newWikiField + '</div>';
+                // console.log( `modified ewWikiField`, newWikiField );
+  
+              }
             }
+
 
             const wikiSplits = newWikiField.split('<img ' );
             let newSplits = [];
@@ -605,7 +610,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             if ( copyProps.addImageWebParts === true ) {
               const section2 = page.addSection();
               imageUrls.map( ( url, idx ) => {
-  
+
                 const imagePartX = ClientsideWebpart.fromComponentDef(ImageWebPart[0]);
                 imagePartX.setProperties<any>( ImageWebPartDefaults );
                 imagePartX.setServerProcessedContent<any>({
@@ -614,12 +619,13 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 let placeholderText = VerifyImg.replace( VerifyReplaceString, url ? url : 'Did not detect an image Url :(' ); 
                 section2.addControl(new ClientsideText(placeholderText));
                 section2.addControl(imagePartX);
-  
+
               });
-  
+
             }
 
             console.log( 'wikiSplits:', newSplits );
+
 
             /***
              *     .d8b.  d8888b. d8888b.      d8b   db  .d88b.  d888888b d88888b .d8888. 
@@ -650,8 +656,13 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 `<div>Highighted all links and image tags on the page</br> &nbsp;&nbsp;&nbsp; so you can more easily find and verify them.</div>`;
                 if ( copyProps.markImagesAndLinks === true ) webPartNotes.push( markImagesAndLinks );
 
-              const imageWebParts = `<div>Images to verify - CTRL-Click to open in new window:</div><div><ul>${ imageUrls.map( note => { return `<li><a href="${ note }">${ note.replace(window.location.origin, '') }<a></li>` ; } ).join('') }</ul></div>`;
-
+              const imageWebParts = copyProps.addImageLinksToSummary !== true ? '' : `<div>
+                Images to verify - CTRL-Click to open in new window:
+                </div>
+                <div>
+                   <ul>${ imageUrls.map( imageLink => { return `<li><a href="${ imageLink }">${ imageLink.replace(window.location.origin, '') }</a></li>` ; } ).join('') }</ul>
+                </div>`;
+              const linksFound = `<div>Links found: ${ update.links }</div>`;
               const logHTML = `<h2>Page Migration log :)</h2><div>
 
                 <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
@@ -659,7 +670,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
                 <div>Results</div>
                 <div><ol>${ webPartNotes.map( note => { return `<li>${ note }</li>` ; } ).join('') }</ol></div>
-                <div>Links found: ${ update.links }</div>
+                ${ linksFound }
                 ${ imageWebParts }
               </div>`;
 
@@ -671,6 +682,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               update.sections.push( 'FAILED script log section');
             }
 
+            //Add original wikiField content to the new page
             try {
               const section3 = page.addSection().addControl(new ClientsideText(newWikiField));
               update.sections.push( 'Added sectionL Text Content');

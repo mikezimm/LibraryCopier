@@ -54,6 +54,8 @@ export interface ICreateThesePages {
   replaceWebUrls: boolean;
   markImagesAndLinks: boolean;
   addImageWebParts: boolean;
+  removeLayoutsZoneInner: boolean;
+  addImageLinksToSummary: boolean;
 
   pivotTiles: {
     add: boolean;
@@ -104,9 +106,9 @@ export type ISearchLocations = 'FileLeafRef' | 'Title' | 'Description' | 'WikiFi
 
 export type IValidWebParts = 'pivotTiles' | 'pageInfo';
 
-export type IOtherOptions = 'replaceWebUrls' | 'markImagesAndLinks' | 'addImageWebParts';
+export type IOtherOptions = 'replaceWebUrls' | 'markImagesAndLinks' | 'addImageWebParts' | 'removeLayoutsZoneInner' | 'addImageLinksToSummary';
 
-export const OtherOptions : IOtherOptions[] = [  'replaceWebUrls', 'markImagesAndLinks', 'addImageWebParts' ];
+export const OtherOptions : IOtherOptions[] = [  'replaceWebUrls', 'markImagesAndLinks', 'addImageWebParts' , 'removeLayoutsZoneInner', 'addImageLinksToSummary' ];
 
 export const ValidWebParts : IValidWebParts[] = [  'pageInfo', 'pivotTiles' ,];
 

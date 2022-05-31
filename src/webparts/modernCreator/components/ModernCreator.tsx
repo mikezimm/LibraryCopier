@@ -45,7 +45,7 @@ export const BaseErrorTrace = `ModernCreator|${ strings.analyticsWeb }|${ string
 
 const defToggleStyle = { root: { width: 160, } };
 
-const optToggleStyle = { root: { width: 250, } };
+const optToggleStyle = { root: { width: 200, } };
 
 export default class ModernCreator extends React.Component<IModernCreatorProps, IModernCreatorState> {
 
@@ -200,6 +200,8 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
         replaceWebUrls: true,
         markImagesAndLinks: true,
         addImageWebParts: true,
+        removeLayoutsZoneInner: true,
+        addImageLinksToSummary: true,
 
         pageInfo: {
           add: true,
@@ -805,6 +807,11 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
       // FPSProps: FPSProps,
 
+    };
+
+    saveObject['AdditionalLink'] = {
+      Url: `${item.destinationUrl}`,
+      Description: `${this.state.copyProps.destPickedWeb.title} >> ${item.FileLeafRef}`,
     };
 
     saveAnalytics3( strings.analyticsWeb , `${strings.analyticsListLog}` , saveObject, true );
