@@ -551,35 +551,35 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               }
             }
 
-          /***
-           *     .d8b.  d8888b. d8888b.       .o88b.  .d88b.  d8b   db d888888b d88888b d8b   db d888888b 
-           *    d8' `8b 88  `8D 88  `8D      d8P  Y8 .8P  Y8. 888o  88 `~~88~~' 88'     888o  88 `~~88~~' 
-           *    88ooo88 88   88 88   88      8P      88    88 88V8o 88    88    88ooooo 88V8o 88    88    
-           *    88~~~88 88   88 88   88      8b      88    88 88 V8o88    88    88~~~~~ 88 V8o88    88    
-           *    88   88 88  .8D 88  .8D      Y8b  d8 `8b  d8' 88  V888    88    88.     88  V888    88    
-           *    YP   YP Y8888D' Y8888D'       `Y88P'  `Y88P'  VP   V8P    YP    Y88888P VP   V8P    YP    
-           *                                                                                              
-           *                                                                                              
-           */
+            /***
+             *     .d8b.  d8888b. d8888b.       .o88b.  .d88b.  d8b   db d888888b d88888b d8b   db d888888b 
+             *    d8' `8b 88  `8D 88  `8D      d8P  Y8 .8P  Y8. 888o  88 `~~88~~' 88'     888o  88 `~~88~~' 
+             *    88ooo88 88   88 88   88      8P      88    88 88V8o 88    88    88ooooo 88V8o 88    88    
+             *    88~~~88 88   88 88   88      8b      88    88 88 V8o88    88    88~~~~~ 88 V8o88    88    
+             *    88   88 88  .8D 88  .8D      Y8b  d8 `8b  d8' 88  V888    88    88.     88  V888    88    
+             *    YP   YP Y8888D' Y8888D'       `Y88P'  `Y88P'  VP   V8P    YP    Y88888P VP   V8P    YP    
+             *                                                                                              
+             *                                                                                              
+             */
 
-          //This attemps to remove the table on pages found in financial manual
-            if ( copyProps.removeLayoutsZoneInner === true ) {
-              const hasFirstLayoutsZoneInner = newWikiField.indexOf('layoutszone-inner') ;
-              if ( hasFirstLayoutsZoneInner > -1 ) {
-                const openInnerPos = newWikiField.indexOf( '>', hasFirstLayoutsZoneInner );
-  
-                const hasLastLayoutsZoneInner = newWikiField.lastIndexOf('layoutszone-inner') ;
-                const closeInnerPos = newWikiField.lastIndexOf( '>', hasLastLayoutsZoneInner );
-  
-                newWikiField = newWikiField.substring( openInnerPos + 1, closeInnerPos + 1 );
-                console.log('newWikiField ~ 575:' , newWikiField );
-                newWikiField = newWikiField.replace('<td class="ms-wiki-columnSpacing" style="width:33.3%;"><div class="ms-rte-layoutszone-outer" style="width:100%;">','');
-                console.log('newWikiField ~ 577:' , newWikiField );
-                newWikiField = '<div>' + newWikiField + '</div>';
-                // console.log( `modified ewWikiField`, newWikiField );
-  
+            //This attemps to remove the table on pages found in financial manual
+              if ( copyProps.removeLayoutsZoneInner === true ) {
+                const hasFirstLayoutsZoneInner = newWikiField.indexOf('layoutszone-inner') ;
+                if ( hasFirstLayoutsZoneInner > -1 ) {
+                  const openInnerPos = newWikiField.indexOf( '>', hasFirstLayoutsZoneInner );
+
+                  const hasLastLayoutsZoneInner = newWikiField.lastIndexOf('layoutszone-inner') ;
+                  const closeInnerPos = newWikiField.lastIndexOf( '>', hasLastLayoutsZoneInner );
+
+                  newWikiField = newWikiField.substring( openInnerPos + 1, closeInnerPos + 1 );
+                  console.log('newWikiField ~ 575:' , newWikiField );
+                  newWikiField = newWikiField.replace('<td class="ms-wiki-columnSpacing" style="width:33.3%;"><div class="ms-rte-layoutszone-outer" style="width:100%;">','');
+                  console.log('newWikiField ~ 577:' , newWikiField );
+                  newWikiField = '<div>' + newWikiField + '</div>';
+                  // console.log( `modified ewWikiField`, newWikiField );
+
+                }
               }
-            }
 
 
             const wikiSplits = newWikiField.split('<img ' );
