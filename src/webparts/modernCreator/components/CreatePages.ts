@@ -66,13 +66,13 @@ const VerifyImg = `<div>
 
 //Font sizes:  24px:  fontSizeXLargePlus,  28px:  fontSizeXxLarge
 const VerifyAtt = `
-  <span class="highlightColorYellow">
+  &nbsp;&nbsp;&nbsp;<span class="highlightColorYellow">
     <span class="fontColorRed">
       <strong>
-        <span class="fontSizeXxLarge">Verify-Replace old links</span>
+        <span class="fontSizeXLargePlus">Verify-Replace old links</span>
       </strong>
     </span>
-  </span>`;
+  </span>&nbsp;&nbsp;&nbsp;`;
 
   const MigrationLog = `<div>
       <strong>
@@ -248,7 +248,10 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
       let webPartNotes: any[] = [];
 
+
       if ( i < 200 ) {
+
+        let startTime = new Date();
 
           let item = items[i];
           // use the web factory to create a page in a specific web
@@ -597,7 +600,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               }
 
               //Add back the image tag removed in the split
-              const warningElement = VerifyImg.replace( VerifyReplaceString, thisImageUrl );
+              const warningElement = VerifyImg.replace( VerifyReplaceString, decodeURI(thisImageUrl) );
               if ( idx > 0 ) { newContent = warningElement + '<img ' + content; }
 
               newSplits.push( newContent ) ;
@@ -616,7 +619,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 imagePartX.setServerProcessedContent<any>({
                     imageSources: { imageSource: url }
                 });
-                let placeholderText = VerifyImg.replace( VerifyReplaceString, url ? url : 'Did not detect an image Url :(' ); 
+                let placeholderText = VerifyImg.replace( VerifyReplaceString, decodeURI(url) ? decodeURI(url) : 'Did not detect an image Url :(' ); 
                 section2.addControl(new ClientsideText(placeholderText));
                 section2.addControl(imagePartX);
 
@@ -660,7 +663,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 Images to verify - CTRL-Click to open in new window:
                 </div>
                 <div>
-                   <ul>${ imageUrls.map( imageLink => { return `<li><a href="${ imageLink }">${ imageLink.replace(window.location.origin, '') }</a></li>` ; } ).join('') }</ul>
+                   <ul>${ imageUrls.map( imageLink => { return `<li><a href="${ imageLink }">${ decodeURI(imageLink.replace(window.location.origin, '').replace(copyProps.destPickedWeb.ServerRelativeUrl, '')) }</a></li>` ; } ).join('') }</ul>
                 </div>`;
               const linksFound = `<div>Links found: ${ update.links }</div>`;
               const logHTML = `<h2>Page Migration log :)</h2><div>
@@ -725,6 +728,13 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
            *                                                                                                                            
            *                                                                                                                            
            */
+
+          
+          let endTime = new Date();
+
+          let processTime = ( endTime.getTime() - startTime.getTime() ) / 1000;
+
+          item.processTime = processTime;
 
           item.result = webPartNotes;
           //updateProgress( latest: any, copyProps: ICreateThesePages, item: IAnyContent, result: string )

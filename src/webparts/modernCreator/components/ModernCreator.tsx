@@ -448,7 +448,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
-        <h2>Modernize Classic Site Pages - v1.0.0.2</h2>
+        <h2>Modernize Classic Site Pages - v1.0.1.0</h2>
         <div className={ null }>
           <div className={ styles.textControlsBox } style={{ }}>
 
@@ -794,6 +794,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       zzzNumber4: item.h3,
       zzzNumber5: item.links,
       zzzNumber6: item.images,
+      zzzNumber7: item.processTime,
       // zzzNumber2: fetchInfo.regexTime,
       // zzzNumber3: fetchInfo.Block.length,
       // zzzNumber4: fetchInfo.Warn.length,

@@ -3,7 +3,7 @@
   "solution": {
     "name": "library-copier-client-side-solution",
     "id": "006bc825-43fd-408c-92a2-94fcbcfa87f7",
-    "version": "1.0.0.2",
+    "version": "1.0.1.0",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
