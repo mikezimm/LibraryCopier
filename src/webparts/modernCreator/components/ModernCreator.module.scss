@@ -2,7 +2,7 @@
 
 .modernCreator {
   overflow: hidden;
-  padding: 1em;
+  // padding: 1em;
   color: "[theme:bodyText, default: #323130]";
   color: var(--bodyText);
   &.teams {
@@ -31,4 +31,166 @@
       color: var(--linkHovered); // note: CSS Custom Properties support is limited to modern browsers only
     }
   }
+}
+
+.textControlsBox {
+  padding-bottom: 10px;
+  background: lightgray;
+}
+
+.normalButton {
+  transition: all, .3s ease;
+  cursor: pointer;
+  padding: 10px 20px;
+  margin: 20px;
+  font-size: larger;
+  font-weight: 600;
+  background:  #f2f2f2f2;
+}
+
+.normalButton:hover {
+  transition: all, .3s ease;
+  background:  #c7c7c7;
+}
+
+
+.sourceInfo{
+  display: flex;
+  flex-direction: row;
+  padding: 10px 20px 5px 20px;
+  transition:all 0.4s ease;
+  height: auto;
+  opacity: 1;
+  // width: 100%;
+  // background: lightgray;
+
+}
+
+
+.replaceInfo{
+  display: flex;
+  flex-direction: row;
+  padding: 10px 20px 5px 20px;
+  transition:all 0.4s ease;
+  // height: 70px;
+  opacity: 1;
+  // width: 100%;
+  // background: lightgray;
+
+}
+
+.allReplaceInfo{
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px 5px 20px;
+  transition:all 0.4s ease;
+  height: 170px;
+  opacity: 1;
+  // width: 100%;
+  // background: lightgray;
+
+}
+
+.webPartsInfo{
+  display: flex;
+  flex-direction: row;
+  padding: 10px 20px 5px 20px;
+  transition:all 0.4s ease;
+  height: 180px;
+  opacity: 1;
+  // width: 100%;
+  // background: lightgray;
+
+}
+
+.hideInfo{
+  opacity: 0;
+  height: 0px;
+  overflow: hidden;
+}
+
+.inputChoices {
+  display: flex;
+  flex-direction: row;
+}
+
+.textBoxFlexContent{
+  display: flex;
+  flex-direction: column;
+  // padding: 10px 20px 20px 20px;
+  padding: 0px;
+  // width: 100%;
+  // background: lightgray;
+
+}
+
+.textBoxLabel{
+  font-size: larger;
+  font-weight: bolder;
+}
+
+.accordion {
+  padding-left: 20px;
+  padding-top: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+
+//Warning
+.textBoxErrorTitle {
+  padding: 15px;
+  font-size: larger;
+  font-weight: bolder;
+  background: yellow;
+  color: red;
+
+}
+
+.textBoxErrorContent {
+  background: yellow;
+  color: red;
+  padding: 0px 0px 20px 35px;
+
+}
+
+.textField {
+  display: table-cell;
+  width: 100%;
+
+  label {
+    font-weight: bold;
+  }
+
+  input {
+    //height: 32px;
+    min-width: 200px;
+    font-size: larger;
+  }
+
+}
+
+.filteredPages {
+  padding: 20px 30px 20px 40px;
+
+  .updated {
+    font-weight: bolder;
+    color: darkgreen;
+  }
+
+  .created {
+    font-weight: bolder;
+    color: darkblue;
+  }
+
+  .skipped {
+    font-weight: bolder;
+    color: darkred;
+  }
+}
+
+.filteredPage {
+  padding-bottom: 10px;
+  font-size: larger;
+  cursor: pointer;
 }

@@ -35,7 +35,14 @@ export default class ModernCreatorWebPart extends BaseClientSideWebPart<IModernC
         isDarkTheme: this._isDarkTheme,
         environmentMessage: this._environmentMessage,
         hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        userDisplayName: this.context.pageContext.user.displayName
+        userDisplayName: this.context.pageContext.user.displayName,
+
+        // 0 - Context
+        pageContext: this.context.pageContext,
+        wpContext: this.context,
+
+        displayMode: this.displayMode,
+
       }
     );
 

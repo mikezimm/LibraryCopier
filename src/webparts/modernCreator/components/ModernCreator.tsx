@@ -1,13 +1,141 @@
 import * as React from 'react';
 import styles from './ModernCreator.module.scss';
-import { IAnyContent, IModernCreatorProps, IModernCreatorState } from './IModernCreatorProps';
+import { clearSearchState, IAllTextBoxTypes, IAnyContent, ICreateThesePages, IModernCreatorProps, IModernCreatorState, IOtherOptions, ISearchLocations, ISearchState, ISourceOrDest, IValidWebParts, OtherOptions, validSearchLocations, ValidWebParts } from './IModernCreatorProps';
+import { sp, Views, IViews, ISite } from "@pnp/sp/presets/all";
+
+import { Toggle } from 'office-ui-fabric-react/lib/Toggle';
+
+import { Label, ILabelStyles } from 'office-ui-fabric-react/lib/Label';
+import { Pivot, PivotItem, IPivotItemProps} from 'office-ui-fabric-react/lib/Pivot';
+import { IStyleSet } from 'office-ui-fabric-react/lib/Styling';
+// For Pivot ^^^^
+
+import { Icon } from 'office-ui-fabric-react/lib/Icon';
+import { TextField,  IStyleFunctionOrObject, ITextFieldStyleProps, ITextFieldStyles } from "office-ui-fabric-react";
+import { Web, IWeb } from "@pnp/sp/presets/all";
+
+import { IconButton, IIconProps, IContextualMenuProps, Stack, Link } from 'office-ui-fabric-react';
+import { ButtonGrid, } from 'office-ui-fabric-react';
+
 import { escape } from '@microsoft/sp-lodash-subset';
-import { createMirrorPage, getALVFinManContent, updateMirrorPage } from './CreatePages';
-import { SourceInfo } from './DataInterface';
 
 import ReactJson from "react-json-view";
 
+
+import { saveAnalytics3 } from '@mikezimm/npmfunctions/dist/Services/Analytics/analytics2';
+import { IZLoadAnalytics, IZSentAnalytics, } from '@mikezimm/npmfunctions/dist/Services/Analytics/interfaces';
+
+import { getSiteInfo, getWebInfoIncludingUnique } from '@mikezimm/npmfunctions/dist/Services/Sites/getSiteInfo';
+
+import { createMirrorPage, getClassicContent, pagePassesSearch, updateMirrorPage, _LinkIsValid } from './CreatePages';
+import { SourceInfo } from './DataInterface';
+
+import * as strings from 'ModernCreatorWebPartStrings';
+import { DisplayMode } from '@microsoft/sp-core-library';
+import { filter } from 'lodash';
+
+export const iconStyles: any = { root: {
+  fontSize: 'x-large',
+  fontWeight: 600,
+  paddingRight: '10px',
+  paddingLeft: '10px',
+}};
+
+export const BaseErrorTrace = `ModernCreator|${ strings.analyticsWeb }|${ strings.analyticsList }`;
+
+const defToggleStyle = { root: { width: 160, } };
+
+const optToggleStyle = { root: { width: 200, } };
+
 export default class ModernCreator extends React.Component<IModernCreatorProps, IModernCreatorState> {
+
+  private lastSourceWeb = this.props.sourceWeb ? this.props.sourceWeb  : '/sites/AutolivFinancialManual/';
+  private lastSourceLib = this.props.sourceLib ? this.props.sourceLib  : 'StandardDocuments';
+  private lastDestWeb = this.props.destWeb ? this.props.destWeb  : this.props.pageContext.web.serverRelativeUrl + '/';
+  private lastComment = 'Testing';
+
+  //Format copied from:  https://developer.microsoft.com/en-us/fluentui#/controls/web/textfield
+  private getWebBoxStyles( props: ITextFieldStyleProps): Partial<ITextFieldStyles> {
+    const { required } = props;
+    return { fieldGroup: [ { width: '90%', maxWidth: '600px' }, { borderColor: 'lightgray', }, ], };
+  }
+
+  private createWebInput( textBox: IAllTextBoxTypes ) {
+
+    let errors = [];
+    let defValue = '';
+
+    let side = textBox === 'dest' || textBox === 'source' ? 'left' : 'right' ;
+    let padding = side === 'right' ? null: '0px' ;
+    let width = side === 'right' ? '350px' : '700px' ;
+    let title = null;
+    let multiline = false;
+
+    switch ( textBox  ) {
+      case 'source':
+        errors = this.state.sourceError;
+        defValue = this.state.sourceWeb;
+        break;
+
+      case 'dest':
+        errors = this.state.destError;
+        defValue = this.state.destWeb;
+        break;
+
+      case 'library':
+        errors = this.state.libError;
+        defValue = this.state.copyProps.sourceLib;
+        break;
+
+      case 'comment': 
+        defValue = this.state.comment;
+        break;
+
+      //Must match ISearchLocations exactly
+      case 'FileLeafRef': case 'Title': case 'Description': case 'WikiField': case 'CanvaseContent1': case 'WebPart': case 'Modified':
+        defValue = this.state.search[ textBox ];
+        padding = '0px';
+        width = '220px';
+        break;
+
+      //Must match 'copyProps.pivotTiles.props' | 'copyProps.pageInfo.props'
+      case 'pivotTiles': case 'pageInfo':
+        defValue = this.state.copyProps[ textBox ].props ;
+        errors = this.state.copyProps[ textBox ].errors ;
+        padding = '0px';
+        width = '570px';
+        multiline = true;
+        break;
+
+      case 'replaceString': case 'withString':
+        width = '50%';
+        title = 'Applies to EVERYTHING in page content including Urls & Links! ';
+
+    }
+
+    const ele =
+    <div title={ title } className = { styles.textBoxFlexContent } style={{ padding: padding, width: width, height: errors.length > 0 ? null : '64px' }}>
+      <div className={ styles.textBoxLabel }>{ `${textBox.charAt(0).toUpperCase() + textBox.substr(1)}` }</div>
+      <TextField
+        className={ styles.textField }
+        styles={ this.getWebBoxStyles  } //this.getReportingStyles
+        defaultValue={ defValue }
+        autoComplete='off'
+        // onChange={ sourceOrDest === 'comment' ? this.commentChange.bind( this ) : sourceOrDest === 'library' ? this.onLibChange.bind( this ) : this._onWebUrlChange.bind( this, sourceOrDest, ) }
+        onChange={ this.textFieldChange.bind( this, textBox ) }
+        validateOnFocusIn
+        validateOnFocusOut
+        multiline= { multiline }
+        autoAdjustHeight= { true }
+
+      />{ errors && errors.length > 0 ? 
+        <div className={ styles.textBoxErrorContent }style={ { paddingTop: '15px', fontSize: 'larger', fontWeight: 600 } }>
+           { errors }
+        </div> : null }
+      </div>;
+
+      return ele;
+  }
 
   /***
   *     .o88b.  .d88b.  d8b   db .d8888. d888888b d8888b. db    db  .o88b. d888888b  .d88b.  d8888b. 
@@ -25,48 +153,104 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
      super(props);
  
      this.state = {
-       docs: [],
-       status: [],
-      //  showPropsHelp: false,
-      //  showDevHeader: showDevHeader,  
-      //  lastStateChange: '',
- 
-      //  mainPivotKey: this.props.defaultPivotKey ? this.props.defaultPivotKey : 'General',
-      //  fetchedDocs: false,
-      //  fetchedAccounts: false,
-      //  fetchedNews: false,
-      //  fetchedHelp: false,
- 
-      //  search: JSON.parse(JSON.stringify( this.props.search )),
-      //  appLinks: [],
-      //  docs: [],
-      //  stds: [],
-      //  sups: [],
-      //  accounts: [],
- 
-      //  news: [],
-      //  help: [],
- 
-      //  buckets: createEmptyBuckets(),
-      //  standards: createEmptyBuckets(),
-      //  supporting: createEmptyBuckets(),
-      //  docItemKey: '',
-      //  supItemKey: '',
-      //  showItemPanel: false,
-      //  showPanelItem: null,
-      //  refreshId: '',
+
+      // sourceWeb: this.props.sourceWeb ? this.props.sourceWeb  : this.props.pageContext.web.serverRelativeUrl,
+      sourceWeb: this.lastSourceWeb,
+      destWeb: this.lastDestWeb,
+      comment: this.lastComment,
+
+      sourceSite: null,
+      destSite: null,
+
+      pages: [],
+      filtered: [],
+      skips: [],
+      status: [],
+
+      sourceError: [],
+      libError: [],
+      destError: [],
+
+      sourceWebValid: false,
+      sourceLibValid: false,
+      destWebValid: false,
+
+      progressComment: '',
+
+      search: clearSearchState(),
+
+      showReplace: false,
+      showFilters: false,
+      showWebParts: false,
+
+      copyProps: {
+        user: this.props.pageContext.user.displayName,
+        getSource: true,
+        doUpdates: false,
+        existing: 'skip',
+        confirm: 'each',
+        updateWiki: false,
+        replaceString: '',
+        withString: '',
+
+        sourcePickedWeb: null,
+        destPickedWeb: null,
+        sourceLib: this.lastSourceLib,
+
+        replaceWebUrls: true,
+        markImagesAndLinks: true,
+        addImageWebParts: true,
+        removeLayoutsZoneInner: true,
+        addImageLinksToSummary: true,
+
+        pageInfo: {
+          add: true,
+          props: '',
+          section: 0,
+          errors: [],
+        },
+
+        pivotTiles: {
+          add: false,
+          props: '',
+          section: 1,
+          errors: [],
+        },
+
+        options: {
+          h1: true,
+          h2: true,
+          h3: true,
+          urls: true,
+          imgs: true,
+        },
+
+        filter: {
+          includes: true,
+          txt: '',
+        }
+      },
+
+      webURLStatus: null,
+      isCurrentWeb: false,
+
+      cachedWebIds: {
+        webCache: [],
+        webIds: [],
+      },
  
      };
    }
  
-   private async updateProgress( latest: any ) {
-    //  let current = this.state.status;
-    //  let result = Promise.resolve(latest);
-    //  console.log('result')
-    //  current.unshift( latest );
-     this.setState({  status: latest  });
+   //updateProgress( { fails: fails, complete: complete, links: links, images: images, results: results } )
+   //updateProgress( 'Page Copy', result, item, { fails: fails, complete: complete, links: links, images: images, results: results, item: item, copyProps: copyProps } )
+   private async updateProgress( latest: any, item: IAnyContent, result: string[], progressComment: string ) {
+
+     this.setState({  status: latest , progressComment: progressComment, skips: latest.skips, filtered: latest.filtered });
+     this.saveLoadAnalytics( 'Page Copy', result, item, latest.copyProps,  );
+
    }
- 
+
   //  private async updateProgress( latest: any ) {
   //   let current = this.state.status;
 
@@ -76,8 +260,15 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
   //   this.setState({  status: current  });
   // }
 
-   public componentDidMount() {
-     this.updateWebInfo( );
+   public async componentDidMount() {
+     
+    await this._onWebUrlChange('source', null, this.lastSourceWeb,  );
+    await this._onWebUrlChange('dest', null, this.lastDestWeb,  );
+    await this.updateLibChange( this.lastSourceLib,  );
+
+
+    // this.startCopyAction( );
+
    }
  
  
@@ -108,11 +299,49 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
    }
 
-   public async updateWebInfo ( ) {
+   
+   public async startGetAction ( ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) );
+    copyProps.getSource = true;
+    copyProps.doUpdates = false;
 
     let updateBucketsNow: boolean = false;
-    let docs: IAnyContent[] = await getALVFinManContent( SourceInfo.docs, this.updateProgress.bind( this ) );
-    this.setState({ docs: docs });
+
+    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ), this.state.search );
+
+    this.setState({ pages: results.items, copyProps: copyProps, filtered: results.filtered,    });
+
+   }
+
+   public async startUpdateAction ( ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) );
+    copyProps.getSource = true;
+    copyProps.doUpdates = true;
+    copyProps.existing = 'overWrite';
+
+    let updateBucketsNow: boolean = false;
+
+    this.setState({ skips: [],  });
+
+    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ), this.state.search );
+
+    this.setState({ pages: results.items, copyProps: copyProps, filtered: results.filtered,  });
+
+   }
+
+   public async startCreateAction ( ) {
+    let copyProps: ICreateThesePages = JSON.parse( JSON.stringify( this.state.copyProps ) );
+    copyProps.getSource = true;
+    copyProps.doUpdates = true;
+    copyProps.existing = 'skip';
+
+    let updateBucketsNow: boolean = false;
+
+    this.setState({ skips: [],  });
+
+    let results = await getClassicContent( copyProps, this.updateProgress.bind( this ), this.state.search );
+
+    this.setState({ pages: results.items, copyProps: copyProps, filtered: results.filtered,  });
 
    }
 
@@ -137,14 +366,459 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       userDisplayName
     } = this.props;
 
+    let sourceUrl = this.createWebInput('source');
+    let destUrl = this.createWebInput('dest');
+    let sourceLib = this.createWebInput('library');
+    let comment = this.createWebInput('comment');
+
+    let replaceString = this.createWebInput('replaceString');
+    let withString = this.createWebInput('withString');
+
+
+    let searchBoxs = validSearchLocations.map( location => {
+      return this.createWebInput( location );
+    });
+
+    const fetchButton =<div className={ styles.normalButton } onClick={ this.startGetAction.bind( this )}>
+      Get Source pages
+    </div>;
+
+    const updateButton =<div className={ styles.normalButton } onClick={ this.startUpdateAction.bind( this )}>
+      Update these pages
+    </div>;
+
+    const replaceButton =<div className={ styles.normalButton } onClick={ this.startCreateAction.bind( this )}>
+      Create non-existing ones
+    </div>;
+
+    const currentProgress = !this.state.progressComment ? null : <div className={ '' } style={ { padding: '10px', height: '30px', fontSize: 'larger', fontWeight: 600 } }>
+      { this.state.progressComment }
+    </div>;
+
+    const pageList = <div className={ styles.filteredPages }>
+      <div className={ styles.textBoxLabel } style={{ paddingBottom: '10px' }}>Filtered Pages - { this.state.filtered.length }</div>
+      {
+        this.state.filtered.map( item => {
+          const newText = item.filteredClass === '.updated' ? 'Updated page!' : item.filteredClass === '.created' ? 'Created page!' : item.filteredClass === '.skipped' ? 'Skipped page' : 'Existing page';
+          const iconName = item.filteredClass === '.updated' ? 'AutoEnhanceOff' : item.filteredClass === '.created' ? 'AutoEnhanceOff' : item.filteredClass === '.skipped' ? 'FastForward' : 'Link';
+          let newPageIcon = !item.destinationUrl ? null : <span onClick={ () => this.gotoNewPage( item ) } style={{ marginLeft: '40px', whiteSpace: 'nowrap' }}>{ newText } { <Icon iconName={iconName} style={ iconStyles }></Icon> } </span>;
+          let filteredClass = item.filteredClass === '.created' ? styles.created : item.filteredClass === '.skipped' ? styles.skipped : item.filteredClass === '.updated' ? styles.updated : null;
+          return <div className={ [ filteredClass, styles.filteredPage ].join(' ') } > <span onClick={() => { window.open( item.FileRef , '_blank' ) ; }}> { item.FileLeafRef } </span> { newPageIcon }</div>;
+        })
+      }
+    </div>;
+
+    const skipList = <div className={ styles.filteredPages }>
+      <div className={ styles.textBoxLabel } style={{ paddingBottom: '10px' }}>Skipped Pages ( already existed) - { this.state.skips.length }</div>
+      {
+        this.state.skips.map( item => {
+          return <div className={ styles.filteredPage }onClick={() => { window.open( item.FileRef , '_blank' ) ; }}> { item.FileLeafRef } </div>;
+        })
+      }
+    </div>;
+
+    const webPartInput = ValidWebParts.map( webpart => {
+      const textBox = this.createWebInput( webpart );
+      const toggle = <Toggle label={ `Add ${webpart} to page` }
+        onChange={ () => { this.toggleWebPartsInfo( webpart ) ; } }
+        checked={ this.state.copyProps[webpart].add }
+        styles={ defToggleStyle }
+      />;
+
+      return <div>
+        { toggle }
+        { textBox }
+      </div>;
+
+    });
+
+    const optionalToggles = OtherOptions.map( option => {
+      const toggle = <Toggle label={ `${option}` }
+        onChange={ () => { this.toggleOptions( option ) ; } }
+        checked={ this.state.copyProps[option] }
+        styles={ optToggleStyle }
+      />;
+      return <div>
+        { toggle }
+      </div>;
+
+    });
+
+    const filteredUrls = this.state.filtered.map( ( item: IAnyContent ) => { return item.FileLeafRef ; });
+
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
+        <h2>Modernize Classic Site Pages - v1.0.1.0</h2>
         <div className={ null }>
-          <ReactJson src={ this.state.docs } name={ 'Source Pages' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
+          <div className={ styles.textControlsBox } style={{ }}>
+
+            <div className={ styles.sourceInfo}>
+              { sourceUrl }
+              { sourceLib }
+            </div>
+            <div className={ styles.sourceInfo}>
+              { destUrl }
+              { comment }
+            </div>
+            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleFilters.bind(this)} >Filter Properties - NOT case sensitive</div>
+            <div className={ [ styles.replaceInfo, this.state.showFilters === false ? styles.hideInfo : null ].join( ' ') }>
+              { searchBoxs }
+            </div>
+            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleReplace.bind(this)} >Replace content - Case Sensitive</div>
+            <div className={ [ styles.allReplaceInfo, this.state.showReplace === false ? styles.hideInfo : null ].join( ' ') }>
+              <div className={ [ styles.replaceInfo ].join( ' ') }>
+                { replaceString }
+                { withString }
+              </div>
+              <div className={ [ styles.replaceInfo ].join( ' ') }>
+                { optionalToggles }
+              </div>
+            </div>
+
+            <div className={ [ styles.textBoxLabel, styles.accordion ].join( ' ' ) } style={{ }} onClick={ this._toggleWebParts.bind(this)} >Webparts</div>
+            <div className={ [ styles.webPartsInfo, this.state.showWebParts === false ? styles.hideInfo : null ].join( ' ') } style={{ display: 'flex' }}>
+              {/* { `Add Webpart Toggles here` } */}
+              { webPartInput }
+              {/* <ReactJson src={ this.state.copyProps.pivotTiles } name={ 'Pivot Tiles' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
+              <ReactJson src={ this.state.copyProps.pageInfo } name={ 'Page Info' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/> */}
+            </div>
+          </div>
+
+          <div className={ styles.inputChoices }>
+            { fetchButton }
+            { updateButton }
+            { replaceButton }
+          </div>
+
+          { currentProgress }
+
+          <div style={{ display: 'flex' }}>
+            { pageList }
+            {/* { this.state.skips.length > 0 ? skipList : null } */}
+          </div>
+
+          <ReactJson src={ filteredUrls } name={ 'Filtered Page Urls' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
+          <ReactJson src={ this.state.filtered } name={ 'Filtered Pages' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
+          <ReactJson src={ this.state.pages } name={ 'Source Pages' } collapsed={ true } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
           <ReactJson src={ this.state.status } name={ 'Updates' } collapsed={ false } displayDataTypes={ true } displayObjectSize={ true } enableClipboard={ true } style={{ padding: '10px 0px' }}/>
 
         </div>
       </section>
     );
   }
+
+  
+  /**
+   * Source:  https://github.com/pnp/sp-dev-fx-webparts/issues/1944
+   * 
+   * @param NewValue 
+   *   
+  private sentWebUrl: string = '';
+  private lastWebUrl : string = '';
+  private typeGetTime: number[] = [];
+  private typeDelay: number[] = [];
+   */
+  private delayOnSourceWeb(NewValue: string, msDelay: number ): void {
+    this.lastSourceWeb = NewValue;
+
+    setTimeout(() => {
+      if (this.lastSourceWeb === NewValue ) {
+        this.lastSourceWeb = this.lastSourceWeb;
+        this._onWebUrlChange( 'source', null, this.lastSourceWeb,  );
+      } else {
+
+      }
+    }, msDelay);
+  }
+
+  //Copied from GenericWebpart.tsx
+  private async _onWebUrlChange( sourceOrDest: ISourceOrDest , ev: any, webUrl: string, ){
+
+    console.log('_onWebUrlChange Fetchitng Lists ====>>>>> :', webUrl );
+
+    let errMessage = null;
+    let stateError : any[] = [];
+
+    let pickedWeb = await getWebInfoIncludingUnique( webUrl, 'min', false, ' > ModernCreator.tsx ~ 204', BaseErrorTrace );
+
+    errMessage = pickedWeb.error;
+    if ( pickedWeb.error && pickedWeb.error.length > 0 ) {
+      stateError.push( <div className={ styles.textBoxErrorTitle } style={ null }>Can't find the site </div>);
+      stateError.push( <div className={ styles.textBoxErrorContent } style={ null }> { errMessage } </div>);
+    }
+
+    let theSite: ISite = await getSiteInfo( webUrl, false, ' > ModernCreator.tsx ~ 376', BaseErrorTrace );
+
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+
+    let isCurrentWeb: boolean = false;
+    if ( webUrl.toLowerCase().indexOf( this.props.pageContext.web.serverRelativeUrl.toLowerCase() ) > -1 ) { isCurrentWeb = true ; }
+
+    let webValid = stateError.length === 0 ? true : false;
+    if ( sourceOrDest === 'source' ) {
+      copyProps.sourcePickedWeb = pickedWeb;
+
+      this.setState({ sourceWeb: webUrl, sourceError: stateError, copyProps: copyProps , isCurrentWeb: isCurrentWeb, sourceSite: theSite, sourceWebValid: webValid });
+
+    } else {
+      copyProps.destPickedWeb = pickedWeb;
+      this.setState({ destWeb: webUrl, destError: stateError, copyProps: copyProps, isCurrentWeb: isCurrentWeb, destSite: theSite, destWebValid: webValid});
+
+    }
+
+    return;
+
+  }
+
+  private async onLibChange( ev: any ) {
+
+    await this.updateLibChange( ev.target.value );
+
+  }
+
+  
+  
+  // onChange={ sourceOrDest === 'comment' ? this.commentChange.bind( this ) : sourceOrDest === 'library' ? this.onLibChange.bind( this ) : this._onWebUrlChange.bind( this, sourceOrDest, ) }
+
+  //Caller should be onClick={ this._clickLeft.bind( this, item )}
+  private textFieldChange( item: IAllTextBoxTypes, ev: any ) {
+    let newValue = ev.target.value;
+    let search: ISearchState = JSON.parse(JSON.stringify( this.state.search ));
+    search[ item ] = newValue;
+
+    if ( validSearchLocations.indexOf( item as any ) > -1 ) {
+      //This is search text box
+      const filtered = this.updatePageList( search, this.state.pages );
+      this.setState({ filtered: filtered, search: search });
+
+    } else if ( item === 'library') {
+      this.updateLibChange(newValue);
+
+    } else if ( item === 'dest' || item === 'source') {
+      this._onWebUrlChange( item, null, newValue );
+
+    } else if ( item === 'comment') {
+      this.commentChange(newValue);
+
+    } else if ( item === 'pivotTiles' || item === 'pageInfo' ) {
+      this.updateWebPartInfo( item, newValue );
+
+    } else if ( item === 'replaceString' || item === 'withString' ) {
+      // this.lastComment = value;
+      let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+      copyProps[item] = newValue;
+      this.setState({ copyProps: copyProps, });
+
+    }
+
+  }
+
+  private updateWebPartInfo( webpart: string, value: string ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+    let updateWebPart = copyProps[ webpart ] ;
+
+    updateWebPart.props = value;
+    updateWebPart.errors = [];
+
+    if ( value ) {
+      try {
+        const test = JSON.parse( value );
+  
+      } catch (e) {
+        updateWebPart.errors = [ 'Properties are not valid JSON' ];
+  
+      }
+    }
+
+    // copyProps[ webpart ] = updateWebPart;
+
+    this.setState( { copyProps: copyProps } ) ;
+
+  }
+
+  private updatePageList ( search: ISearchState , pages: IAnyContent[]) {
+    let filtered: IAnyContent[] = [];
+    pages.map ( page => {
+      if ( pagePassesSearch( page, search ) ) { filtered.push( page ) ; }
+    });
+
+    return filtered;
+  }
+
+  private async updateLibChange( value: string, ) {
+
+    let errMessage = null;
+    let stateError : any[] = [];
+
+    let testUrl = `${this.state.copyProps.sourcePickedWeb.url}/${value}/Forms/`;
+
+    let sourceLibValid = await _LinkIsValid( testUrl );
+
+    if ( sourceLibValid !== true ) {
+      errMessage = 'Double check spelling :(';
+      stateError.push( <div className={ styles.textBoxErrorTitle } style={ null }>LibraryName does not exist</div>);
+      stateError.push( <div className={ styles.textBoxErrorContent } style={ null }> { errMessage } </div>);
+    }
+
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+    copyProps.sourceLib = value;
+
+    this.setState({ sourceLibValid: sourceLibValid, libError: stateError, copyProps: copyProps,  });
+
+  }
+
+  private gotoNewPage( item: IAnyContent ) {
+    window.open( item.destinationUrl, '_blank' );
+  }
+
+  private async commentChange( value: string ) {
+    this.lastComment = value;
+    this.setState({ comment: this.lastComment, });
+
+  }
+
+  private toggleWebPartsInfo( webpart: IValidWebParts ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+    copyProps[webpart].add = copyProps[webpart].add === true ? false : true;
+    this.setState({ copyProps: copyProps });
+  }
+
+  private toggleOptions( option: IOtherOptions ) {
+    let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
+    copyProps[option] = copyProps[option] === true ? false : true;
+    this.setState({ copyProps: copyProps });
+  }
+
+  private _toggleReplace() {
+    let newState = this.state.showReplace === true ? false : true;
+    this.setState({ showReplace: newState });
+  }
+
+  private _toggleFilters() {
+    let newState = this.state.showFilters === true ? false : true;
+    this.setState({ showFilters: newState });
+  }
+
+  private _toggleWebParts() {
+    let newState = this.state.showWebParts === true ? false : true;
+    this.setState({ showWebParts: newState });
+  }
+
+/***
+ *     .d8b.  d8b   db  .d8b.  db      db    db d888888b d888888b  .o88b. .d8888. 
+ *    d8' `8b 888o  88 d8' `8b 88      `8b  d8' `~~88~~'   `88'   d8P  Y8 88'  YP 
+ *    88ooo88 88V8o 88 88ooo88 88       `8bd8'     88       88    8P      `8bo.   
+ *    88~~~88 88 V8o88 88~~~88 88         88       88       88    8b        `Y8b. 
+ *    88   88 88  V888 88   88 88booo.    88       88      .88.   Y8b  d8 db   8D 
+ *    YP   YP VP   V8P YP   YP Y88888P    YP       YP    Y888888P  `Y88P' `8888Y' 
+ *                                                                                
+ *                                                                                
+ */
+ private async saveLoadAnalytics( Title: string, Result: string[], item: IAnyContent, copyProps: ICreateThesePages ) {
+
+    // Do not save anlytics while in Edit Mode... only after save and page reloads
+    if ( this.props.displayMode === DisplayMode.Edit ) { return; }
+
+    let loadProperties: IZLoadAnalytics = {
+      SiteID: this.props.pageContext.site.id['_guid'] as any,  //Current site collection ID for easy filtering in large list
+      WebID:  this.props.pageContext.web.id['_guid'] as any,  //Current web ID for easy filtering in large list
+      SiteTitle:  this.state.copyProps.destPickedWeb.title, //Web Title
+      TargetSite:  this.state.copyProps.destPickedWeb.ServerRelativeUrl,  //Saved as link column.  Displayed as Relative Url
+      ListID:  `${this.state.copyProps.sourcePickedWeb.ServerRelativeUrl}/${this.state.copyProps.sourceLib}`,  //Current list ID for easy filtering in large list
+      ListTitle:  `${this.state.copyProps.sourcePickedWeb.ServerRelativeUrl}/${this.state.copyProps.sourceLib}`,
+      TargetList: `${this.state.copyProps.destPickedWeb.ServerRelativeUrl}/SitePages`,  //Saved as link column.  Displayed as Relative Url
+
+    };
+
+    let zzzRichText1Obj = copyProps;
+    let zzzRichText2Obj = {
+      Author: item.Author.Title,
+      Editor: item.Editor.Title,
+      Created: item.Created,
+      Modified: item.Modified,
+      ID: item.ID,
+    };
+    let zzzRichText3Obj = Result;
+
+    console.log( 'zzzRichText1Obj:', zzzRichText1Obj);
+    console.log( 'zzzRichText2Obj:', zzzRichText2Obj);
+    console.log( 'zzzRichText3Obj:', zzzRichText3Obj);
+
+    let zzzRichText1 = null;
+    let zzzRichText2 = null;
+    let zzzRichText3 = null;
+
+    //This will get rid of all the escaped characters in the summary (since it's all numbers)
+    // let zzzRichText3 = ''; //JSON.stringify( fetchInfo.summary ).replace('\\','');
+    //This will get rid of the leading and trailing quotes which have to be removed to make it real json object
+    // zzzRichText3 = zzzRichText3.slice(1, zzzRichText3.length - 1);
+
+    if ( zzzRichText1Obj ) { zzzRichText1 = JSON.stringify( zzzRichText1Obj ); }
+    if ( zzzRichText2Obj ) { zzzRichText2 = JSON.stringify( zzzRichText2Obj ); }
+    if ( zzzRichText3Obj ) { zzzRichText3 = JSON.stringify( zzzRichText3Obj ); }
+
+    console.log('zzzRichText1 length:', zzzRichText1 ? zzzRichText1.length : 0 );
+    console.log('zzzRichText2 length:', zzzRichText2 ? zzzRichText2.length : 0 );
+    console.log('zzzRichText3 length:', zzzRichText3 ? zzzRichText3.length : 0 );
+
+    // let FPSProps = null;
+    // let FPSPropsObj = buildFPSAnalyticsProps( this.properties, this.wpInstanceID, this.context.pageContext.web.serverRelativeUrl );
+    // FPSProps = JSON.stringify( FPSPropsObj );
+
+    // let resultString = Result.join( '; ');
+
+    let saveObject: IZSentAnalytics = {
+
+      loadProperties: loadProperties,
+
+      Title: Title,  //General Label used to identify what analytics you are saving:  such as Web Permissions or List Permissions.
+
+      Result:  Result[0] ? Result[0] : 'Unknown',  //Success or Error
+
+      zzzText1: `${ item.FileLeafRef }`,
+      zzzText2: `${ this.lastComment }`,
+      zzzText3: `${ this.state.copyProps.sourcePickedWeb.url }`,
+
+      zzzText4: `${ this.state.copyProps.destPickedWeb.url }`,
+      zzzText5: `${ this.state.copyProps.sourceLib }`,
+
+      zzzText6: `${ item.FileLeafRef }`,
+      // zzzText7: `${  }}`,
+
+      //Info1 in some webparts.  Simple category defining results.   Like Unique / Inherited / Collection
+      // zzzText7: `${   this.properties.selectedProperties.join('; ') }`, //Info2 in some webparts.  Phrase describing important details such as "Time to check old Permissions: 86 snaps / 353ms"
+
+      zzzNumber1: item.ID,
+      zzzNumber2: item.h1,
+      zzzNumber3: item.h2,
+      zzzNumber4: item.h3,
+      zzzNumber5: item.links,
+      zzzNumber6: item.images,
+      zzzNumber7: item.processTime,
+      // zzzNumber2: fetchInfo.regexTime,
+      // zzzNumber3: fetchInfo.Block.length,
+      // zzzNumber4: fetchInfo.Warn.length,
+      // zzzNumber5: fetchInfo.Verify.length,
+      // zzzNumber6: fetchInfo.Secure.length,
+      // zzzNumber7: fetchInfo.js.length,
+
+      zzzRichText1: zzzRichText1,  //Used to store JSON objects for later use, will be stringified
+      zzzRichText2: zzzRichText2,
+      zzzRichText3: zzzRichText3,
+
+      // FPSProps: FPSProps,
+
+    };
+
+    saveObject['AdditionalLink'] = {
+      Url: `${item.destinationUrl}`,
+      Description: `${this.state.copyProps.destPickedWeb.title} >> ${item.FileLeafRef}`,
+    };
+
+    saveAnalytics3( strings.analyticsWeb , `${strings.analyticsListLog}` , saveObject, true );
+
+    console.log('saved view info');
+
+  }
+
 }

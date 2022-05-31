@@ -6,6 +6,11 @@ declare interface IModernCreatorWebPartStrings {
   AppLocalEnvironmentTeams: string;
   AppSharePointEnvironment: string;
   AppTeamsTabEnvironment: string;
+
+  analyticsWeb: string;
+  analyticsList: string;
+  analyticsListLog: string;
+
 }
 
 declare module 'ModernCreatorWebPartStrings' {
