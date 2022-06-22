@@ -382,10 +382,11 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               newWikiField = newWikiField.replace( attRegex, `${VerifyAtt}<a `);
             }
 
-            
+            //  https://github.com/mikezimm/LibraryCopier/issues/19
+
             const imageSplits = newWikiField.split('<img');
             update.images = imageSplits.length -1;
-            if ( imageSplits.length > 1 ) { 
+            if ( imageSplits.length > 1 ) {
               images.push( item.FileLeafRef );
             }
 
