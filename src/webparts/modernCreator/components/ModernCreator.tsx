@@ -395,6 +395,10 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       { this.state.progressComment }
     </div>;
 
+    const layoutsZoneWarning = !this.state.progressComment || this.state.copyProps.removeLayoutsZoneInner !== true ? null : <div className={ '' } style={ { padding: '10px 10px 5px 30px', height: '30px', fontSize: 'larger', fontWeight: 600, background: 'yellow', color: 'red' } }>
+      { `If a page does not have any content, try turning off 'removeLayoutsZoneInner' in 'Replace content' section` }
+    </div>;
+
     const pageList = <div className={ styles.filteredPages }>
       <div className={ styles.textBoxLabel } style={{ paddingBottom: '10px' }}>Filtered Pages - { this.state.filtered.length }</div>
       {
@@ -491,6 +495,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
           </div>
 
           { currentProgress }
+          { layoutsZoneWarning }
 
           <div style={{ display: 'flex' }}>
             { pageList }

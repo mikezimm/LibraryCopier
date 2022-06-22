@@ -262,8 +262,8 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
           let destExists = await _LinkIsValid( testUrl );
           item.mirrorExisted = destExists;
 
-          const currentWikiField = item.WikiField;
-          let newWikiField = `${item.WikiField}`;
+          const currentWikiField = item.WikiField ? item.WikiField : 'No WikiField content Found';
+          let newWikiField = currentWikiField ? `${item.WikiField}` : 'No WikiField Found';
 
           let update = {
             saved: false,
@@ -787,8 +787,32 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
       .select(selectThese).expand(expandThese).getAll();
 
     } catch (e) {
-      errMess = getHelpfullErrorV2( e, true, true, 'getClassicContent ~ 213');
+      errMess = getHelpfullErrorV2( e, false, true, 'getClassicContent ~ 213');
       console.log('sourceProps', sourceProps );
+
+      // https://github.com/mikezimm/LibraryCopier/issues/18
+      if ( errMess && errMess.indexOf(' Missing column: Title0' ) ) {
+        //Retry with just column called 'Title'
+        selectThese = selectThese.replace('Title0,','Title,');
+
+        console.log('ModernCreator.tsx ~ 798 - Attempting to fetch with Title instead of Title column.' );
+
+        try {
+          items = await web.lists.getByTitle( copyProps.sourceLib ).items
+          .select(selectThese).expand(expandThese).getAll();
+
+        } catch (e) {
+          errMess = getHelpfullErrorV2( e, true, true, 'getClassicContent ~ 213');
+          console.log('sourceProps', sourceProps );
+
+        }
+
+      } else {
+
+        alert( errMess );
+
+      }
+
 
     }
 
