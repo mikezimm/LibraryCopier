@@ -654,6 +654,13 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     let sourceLibValid = await _LinkIsValid( testUrl );
 
+    //https://github.com/mikezimm/LibraryCopier/issues/17
+    if ( sourceLibValid !== true && value.indexOf(' ')  > -1 ) {
+      //Check for library name that might have spaces removed like Site Pages.
+      testUrl = `${this.state.copyProps.sourcePickedWeb.url}/${value.replace( ' ','' )}/Forms/`;
+      sourceLibValid = await _LinkIsValid( testUrl );
+    }
+
     if ( sourceLibValid !== true ) {
       errMessage = 'Double check spelling :(';
       stateError.push( <div className={ styles.textBoxErrorTitle } style={ null }>LibraryName does not exist</div>);
