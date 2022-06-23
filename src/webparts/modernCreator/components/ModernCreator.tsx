@@ -199,6 +199,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
         replaceWebUrls: true,
         markImagesAndLinks: true,
+        replacePageSpaces: true,
         addImageWebParts: true,
         removeLayoutsZoneInner: true,
         addImageLinksToSummary: true,
@@ -452,7 +453,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
-        <h2>Modernize Classic Site Pages - v1.0.1.0</h2>
+        <h2>Modernize Classic Site Pages - v1.0.1.1<a style={{ marginLeft: 30 }} target="_blank" href='https://github.com/mikezimm/LibraryCopier/issues/'>Go to Issues</a></h2>
         <div className={ null }>
           <div className={ styles.textControlsBox } style={{ }}>
 

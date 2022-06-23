@@ -371,6 +371,8 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               newWikiField = newWikiField.replace( regexFindWebUrl, destWebUrl );
             }
 
+            let replacePageSpacesLinks = [];
+
             if ( copyProps.markImagesAndLinks === true ) {
               const imgRegex = new RegExp( '\<img ', 'gmi');
               const attRegex = new RegExp( '\<a ', 'gmi');
@@ -380,6 +382,47 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
               //This adds the warning box above any image tags
               // newWikiField = newWikiField.replace( imgRegex, `${VerifyImg}<img ` );
               newWikiField = newWikiField.replace( attRegex, `${VerifyAtt}<a `);
+
+              const linkSplits = newWikiField.split( attRegex );
+              console.log('Found these potential link splits', linkSplits );
+
+              //Find first href=""
+
+              if ( copyProps.replacePageSpaces !== true ) {
+
+              } else {
+                let newHrefSplits = [];
+                linkSplits.map( ( splitMe, idx ) => {
+                  if ( idx > 0 ) {
+                    let grThan = splitMe.indexOf('>' ) + 6;
+                    let hrefStart = splitMe.indexOf('href="' ) + 6;
+                    let hrefEnd = splitMe.indexOf('"', hrefStart +1 );
+  
+                    if ( hrefStart > 5 && hrefEnd > 6 && grThan > hrefEnd ) {
+                      const href = splitMe.slice( hrefStart, hrefEnd );
+                      let newHref = href;
+                      const startPageName = href.indexOf( '/SitePages/' ) + 11;
+                      const startDotASPX = href.indexOf( '.aspx' ) ;
+                      if ( startPageName > 10 && startDotASPX > -1 ) {
+                        //This link is a SitePages link, do replacement of spaces with dash
+                        newHref = href.slice( 0, startPageName ) ;
+                        newHref += href.slice( startPageName, startDotASPX ).replace(/\s/g, '-').replace(/%20/g,'-');
+                        newHref += href.slice( startDotASPX );
+  
+                        console.log('linkUpdates', href );
+                        console.log('linkUpdates', newHref );
+
+                        replacePageSpacesLinks.push( newHref );
+                        let newSplitValue = splitMe.slice( 0, hrefStart ) + newHref + splitMe.slice( hrefEnd );
+
+                        newHrefSplits.push( newSplitValue );
+  
+                      }
+                    }
+                  } else { newHrefSplits.push( splitMe ) ; }
+                });
+                newWikiField = newHrefSplits.join('<a ');
+              }
             }
 
             //  https://github.com/mikezimm/LibraryCopier/issues/19
@@ -667,6 +710,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                    <ul>${ imageUrls.map( imageLink => { return `<li><a href="${ imageLink }">${ decodeURI(imageLink.replace(window.location.origin, '').replace(copyProps.destPickedWeb.ServerRelativeUrl, '')) }</a></li>` ; } ).join('') }</ul>
                 </div>`;
               const linksFound = `<div>Links found: ${ update.links }</div>`;
+              const linksSpaceFixed = replacePageSpacesLinks.length === 0 ? '' :  `<div>Site Page links updated:  Replaced spaces with hyphens: ${ replacePageSpacesLinks.length }</div>`;
               const logHTML = `<h2>Page Migration log :)</h2><div>
 
                 <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
@@ -675,6 +719,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 <div>Results</div>
                 <div><ol>${ webPartNotes.map( note => { return `<li>${ note }</li>` ; } ).join('') }</ol></div>
                 ${ linksFound }
+                ${ linksSpaceFixed }
                 ${ imageWebParts }
               </div>`;
 
