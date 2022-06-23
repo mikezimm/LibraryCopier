@@ -112,10 +112,19 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
         title = 'Applies to EVERYTHING in page content including Urls & Links! ';
 
     }
+    let titleExtra = '';
+    if( this.state.sourceWeb.toLowerCase().indexOf('livFinancialManual'.toLowerCase() ) > -1 ) {
+      if ( textBox === 'replaceString' ) {
+        titleExtra = this.state.destWeb + 'StandardDocuments/';
+      } else if ( textBox === 'withString' ) {
+        titleExtra = '/sites/FinanceManual/Manual/SitePages/';
+      } 
+    }
+
 
     const ele =
     <div title={ title } className = { styles.textBoxFlexContent } style={{ padding: padding, width: width, height: errors.length > 0 ? null : '64px' }}>
-      <div className={ styles.textBoxLabel }>{ `${textBox.charAt(0).toUpperCase() + textBox.substr(1)}` }</div>
+      <div className={ styles.textBoxLabel }>{ `${textBox.charAt(0).toUpperCase() + textBox.substr(1)}` }<span style={{fontSize: '12px', paddingLeft: '20px' }}>{ titleExtra }</span></div>
       <TextField
         className={ styles.textField }
         styles={ this.getWebBoxStyles  } //this.getReportingStyles
@@ -453,7 +462,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
-        <h2>Modernize Classic Site Pages - v1.0.1.1<a style={{ marginLeft: 30 }} target="_blank" href='https://github.com/mikezimm/LibraryCopier/issues/'>Go to Issues</a></h2>
+        <h2>Modernize Classic Site Pages - v1.0.1.2<a style={{ marginLeft: 30 }} target="_blank" href='https://github.com/mikezimm/LibraryCopier/issues/'>Go to Issues</a></h2>
         <div className={ null }>
           <div className={ styles.textControlsBox } style={{ }}>
 
@@ -675,6 +684,12 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     let copyProps: ICreateThesePages = JSON.parse(JSON.stringify( this.state.copyProps ) ) ;
     copyProps.sourceLib = value;
+
+    if ( value.toLowerCase() === 'site pages' && copyProps.sourcePickedWeb.ServerRelativeUrl.toLowerCase() === '/sites/autolivfinancialmanual' ) {
+      copyProps.removeLayoutsZoneInner = false;
+    } else if ( value.toLowerCase() === 'standarddocuments' && copyProps.sourcePickedWeb.ServerRelativeUrl.toLowerCase() === '/sites/autolivfinancialmanual' ) {
+      copyProps.removeLayoutsZoneInner = true;
+    }
 
     this.setState({ sourceLibValid: sourceLibValid, libError: stateError, copyProps: copyProps,  });
 

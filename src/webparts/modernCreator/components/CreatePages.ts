@@ -69,7 +69,7 @@ const VerifyAtt = `
   &nbsp;&nbsp;&nbsp;<span class="highlightColorYellow">
     <span class="fontColorRed">
       <strong>
-        <span class="fontSizeXLargePlus">Verify-Replace old links</span>
+        <span class="fontSizeXLargePlus">VerifyLink</span>
       </strong>
     </span>
   </span>&nbsp;&nbsp;&nbsp;`;
@@ -108,6 +108,8 @@ export async function _LinkIsValid(url)
     }catch(e) {
       isValid = false;
     }
+
+    console.log(`Checked link is valid: ${isValid} - ${url}`);
 
     return isValid;
 } 
@@ -373,6 +375,11 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
             let replacePageSpacesLinks = [];
 
+            const specialALVFinManCase = `${copyProps.destPickedWeb.ServerRelativeUrl}/StandardDocuments/`;
+            let specialReplacementsNote = `${specialALVFinManCase} > ${'/sites/FinanceManual/Manual/SitePages/'}`;
+            let specialReplacementsCount = 0;
+            let specialReplacements = [];
+
             if ( copyProps.markImagesAndLinks === true ) {
               const imgRegex = new RegExp( '\<img ', 'gmi');
               const attRegex = new RegExp( '\<a ', 'gmi');
@@ -398,10 +405,24 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                     let hrefStart = splitMe.indexOf('href="' ) + 6;
                     let hrefEnd = splitMe.indexOf('"', hrefStart +1 );
   
+                    //Looking for any items where the closing double quote is before the next >
                     if ( hrefStart > 5 && hrefEnd > 6 && grThan > hrefEnd ) {
-                      const href = splitMe.slice( hrefStart, hrefEnd );
+                      let href = splitMe.slice( hrefStart, hrefEnd );
+
+
+                      if ( href.toLowerCase().indexOf(specialALVFinManCase.toLowerCase()) > -1 ) {
+                        href = href.replace( specialALVFinManCase ,'/sites/FinanceManual/Manual/SitePages/');
+                        specialReplacementsCount ++;
+                        
+                        if ( specialReplacements.indexOf( specialReplacementsNote ) === -1 ) { 
+                          specialReplacements.push( specialReplacementsNote );
+                        }
+                      }
+
                       let newHref = href;
+
                       const startPageName = href.indexOf( '/SitePages/' ) + 11;
+
                       const startDotASPX = href.indexOf( '.aspx' ) ;
                       if ( startPageName > 10 && startDotASPX > -1 ) {
                         //This link is a SitePages link, do replacement of spaces with dash
@@ -417,8 +438,8 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
                         newHrefSplits.push( newSplitValue );
   
-                      }
-                    }
+                      } else { newHrefSplits.push( splitMe ) ; }
+                    } else { newHrefSplits.push( splitMe ) ; }
                   } else { newHrefSplits.push( splitMe ) ; }
                 });
                 newWikiField = newHrefSplits.join('<a ');
@@ -710,6 +731,9 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                    <ul>${ imageUrls.map( imageLink => { return `<li><a href="${ imageLink }">${ decodeURI(imageLink.replace(window.location.origin, '').replace(copyProps.destPickedWeb.ServerRelativeUrl, '')) }</a></li>` ; } ).join('') }</ul>
                 </div>`;
               const linksFound = `<div>Links found: ${ update.links }</div>`;
+
+              const specialReplacementsInfo = specialReplacementsCount === 0 ? '' :  `<div>Special Links fixed: ${specialReplacementsCount } => ${specialReplacementsNote } </div>`
+
               const linksSpaceFixed = replacePageSpacesLinks.length === 0 ? '' :  `<div>Site Page links updated:  Replaced spaces with hyphens: ${ replacePageSpacesLinks.length }</div>`;
               const logHTML = `<h2>Page Migration log :)</h2><div>
 
@@ -719,6 +743,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 <div>Results</div>
                 <div><ol>${ webPartNotes.map( note => { return `<li>${ note }</li>` ; } ).join('') }</ol></div>
                 ${ linksFound }
+                ${ specialReplacementsInfo }
                 ${ linksSpaceFixed }
                 ${ imageWebParts }
               </div>`;
