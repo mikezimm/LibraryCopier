@@ -199,6 +199,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
         replaceWebUrls: true,
         markImagesAndLinks: true,
+        replacePageSpaces: true,
         addImageWebParts: true,
         removeLayoutsZoneInner: true,
         addImageLinksToSummary: true,
@@ -395,6 +396,10 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
       { this.state.progressComment }
     </div>;
 
+    const layoutsZoneWarning = !this.state.progressComment || this.state.copyProps.removeLayoutsZoneInner !== true ? null : <div className={ '' } style={ { padding: '10px 10px 5px 30px', height: '30px', fontSize: 'larger', fontWeight: 600, background: 'yellow', color: 'red' } }>
+      { `If a page does not have any content, try turning off 'removeLayoutsZoneInner' in 'Replace content' section` }
+    </div>;
+
     const pageList = <div className={ styles.filteredPages }>
       <div className={ styles.textBoxLabel } style={{ paddingBottom: '10px' }}>Filtered Pages - { this.state.filtered.length }</div>
       {
@@ -448,7 +453,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
-        <h2>Modernize Classic Site Pages - v1.0.1.0</h2>
+        <h2>Modernize Classic Site Pages - v1.0.1.1<a style={{ marginLeft: 30 }} target="_blank" href='https://github.com/mikezimm/LibraryCopier/issues/'>Go to Issues</a></h2>
         <div className={ null }>
           <div className={ styles.textControlsBox } style={{ }}>
 
@@ -491,6 +496,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
           </div>
 
           { currentProgress }
+          { layoutsZoneWarning }
 
           <div style={{ display: 'flex' }}>
             { pageList }
@@ -653,6 +659,13 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
     let testUrl = `${this.state.copyProps.sourcePickedWeb.url}/${value}/Forms/`;
 
     let sourceLibValid = await _LinkIsValid( testUrl );
+
+    //https://github.com/mikezimm/LibraryCopier/issues/17
+    if ( sourceLibValid !== true && value.indexOf(' ')  > -1 ) {
+      //Check for library name that might have spaces removed like Site Pages.
+      testUrl = `${this.state.copyProps.sourcePickedWeb.url}/${value.replace( ' ','' )}/Forms/`;
+      sourceLibValid = await _LinkIsValid( testUrl );
+    }
 
     if ( sourceLibValid !== true ) {
       errMessage = 'Double check spelling :(';
