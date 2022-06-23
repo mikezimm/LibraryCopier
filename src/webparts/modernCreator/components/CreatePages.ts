@@ -413,7 +413,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                       if ( href.toLowerCase().indexOf(specialALVFinManCase.toLowerCase()) > -1 ) {
                         href = href.replace( specialALVFinManCase ,'/sites/FinanceManual/Manual/SitePages/');
                         specialReplacementsCount ++;
-                        
+
                         if ( specialReplacements.indexOf( specialReplacementsNote ) === -1 ) { 
                           specialReplacements.push( specialReplacementsNote );
                         }
@@ -732,7 +732,7 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
                 </div>`;
               const linksFound = `<div>Links found: ${ update.links }</div>`;
 
-              const specialReplacementsInfo = specialReplacementsCount === 0 ? '' :  `<div>Special Links fixed: ${specialReplacementsCount } => ${specialReplacementsNote } </div>`
+              const specialReplacementsInfo = specialReplacementsCount === 0 ? '' :  `<div>Special Links fixed: ${specialReplacementsCount } => ${specialReplacementsNote } </div>`;
 
               const linksSpaceFixed = replacePageSpacesLinks.length === 0 ? '' :  `<div>Site Page links updated:  Replaced spaces with hyphens: ${ replacePageSpacesLinks.length }</div>`;
               const logHTML = `<h2>Page Migration log :)</h2><div>
