@@ -462,7 +462,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
-        <h2>Modernize Classic Site Pages - v1.0.1.2<a style={{ marginLeft: 30 }} target="_blank" href='https://github.com/mikezimm/LibraryCopier/issues/'>Go to Issues</a></h2>
+        <h2>Modernize Classic Site Pages - v1.0.1.3<a style={{ marginLeft: 30 }} target="_blank" href='https://github.com/mikezimm/LibraryCopier/issues/'>Go to Issues</a></h2>
         <div className={ null }>
           <div className={ styles.textControlsBox } style={{ }}>
 
