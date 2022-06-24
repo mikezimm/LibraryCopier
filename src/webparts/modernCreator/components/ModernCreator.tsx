@@ -469,7 +469,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
           styles={ this.state.copyProps.sourceModern === true ? modernToggleStyle: classicToggleStyle }
           onText={ 'Modern' }
           offText={ 'Classic' }
-          disabled={ true }
+          // disabled={ true }
         />
       </div>;
 

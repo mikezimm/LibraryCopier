@@ -502,9 +502,10 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
 
             let page: IClientsidePage = null;
+            const pageRelativeUrl = `${ copyProps.destPickedWeb.ServerRelativeUrl}/SitePages/${dashFileName}`;
 
             if ( destExists === true ) {
-              const pageRelativeUrl = `${ copyProps.destPickedWeb.ServerRelativeUrl}/SitePages/${dashFileName}`;
+
               page = await ClientsidePageFromFile(destWeb.getFileByServerRelativePath( pageRelativeUrl ));
               await page.load();
               let removedCount = 0;
@@ -542,17 +543,44 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
             if ( copyProps.sourceModern === true ) {
 
               try {
-                let web = await Web( `${window.location.origin}${copyProps.sourcePickedWeb.ServerRelativeUrl}` );
-                const source: IClientsidePage = await web.loadClientsidePage( item.FileLeafRef );
-  
-                await source.copyTo( page );
                 page.save();
-              } catch {
-                let errMess = `${ item.FileLeafRef } ${ page.title }`
-                comments.push( errMess );
+                // let sourceWeb = await Web( `${window.location.origin}${copyProps.sourcePickedWeb.ServerRelativeUrl}` );
+                // const source: IClientsidePage = await sourceWeb.loadClientsidePage( item.FileRef );
+  
+                // let destWebX = await Web( `${window.location.origin}${copyProps.destPickedWeb.ServerRelativeUrl}` );
+                // const dest: IClientsidePage = await destWebX.loadClientsidePage( `${pageRelativeUrl}` );
+
+                // /**
+                //  * Getting error on the copyTo part:
+                //  * Not sure why because I fixed the errors in destWebX by adding the orgin when getting it.
+                //  * Then I do not get an error on getting 'dest'
+                //  * But then I get an error when doing the copyTo
+                //  * 
+                //  * Error: Error making HttpClient request in queryable [400] Bad Request ::> 
+                //  * {"odata.error":{"code":"-2147024809, System.ArgumentException","message":{"lang":"en-US",
+                //  * "value":"Server relative urls must start with SPWeb.ServerRelativeUrl"}}}
+                //  * 
+                //  */
+                // await source.copyTo( dest );
+
+                /**
+                 * Got same error as above with this code.
+                 */
+                let sourceWeb = Web( `${window.location.origin}${copyProps.sourcePickedWeb.ServerRelativeUrl}` );
+                const source: IClientsidePage = await sourceWeb.loadClientsidePage( item.FileRef );
+  
+                let destWebX = Web( `${window.location.origin}${copyProps.destPickedWeb.ServerRelativeUrl}` );
+                const dest: IClientsidePage = await source.copy( destWebX, item.FileRef, title);
+                dest.save();
+
+              } catch (e) {
+
+                let errMess = getHelpfullErrorV2( e, true, true, 'LibraryCopier CreatePages ~ 552' );
+                let errPlace = `${ item.FileLeafRef } ${ page.title }`;
+                comments.push( errMess, errPlace );
                 update.sections.push( errMess );
               }
-              
+
             } else {
 
 
