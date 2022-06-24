@@ -539,241 +539,264 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
             // add two columns with factor 6 - this is a two column layout as the total factor in a section should add up to 12
 
-            /***
-             *     .d8b.  d8888b. d8888b.      d8888b.  .d8b.   d888b  d88888b      d888888b d8b   db d88888b  .d88b.  
-             *    d8' `8b 88  `8D 88  `8D      88  `8D d8' `8b 88' Y8b 88'            `88'   888o  88 88'     .8P  Y8. 
-             *    88ooo88 88   88 88   88      88oodD' 88ooo88 88      88ooooo         88    88V8o 88 88ooo   88    88 
-             *    88~~~88 88   88 88   88      88~~~   88~~~88 88  ooo 88~~~~~         88    88 V8o88 88~~~   88    88 
-             *    88   88 88  .8D 88  .8D      88      88   88 88. ~8~ 88.            .88.   88  V888 88      `8b  d8' 
-             *    YP   YP Y8888D' Y8888D'      88      YP   YP  Y888P  Y88888P      Y888888P VP   V8P YP       `Y88P'  
-             *                                                                                                         
-             *                                                                                                         
-             */
-
-            if ( copyProps.pageInfo.add !== true  ) {
-              //Do nothing
-
-            } else if ( FPSPageInfo.length === 0 ) {
-              alert( 'FPSPageInfo app is NOT yet available on this site.  Please add to app catalog and then re-run :)' ) ;
-              webPartNotes.push( 'Page Info web part NOT available on this site yet.  Did NOT add.' );
-
-            } else {
-              const part = ClientsideWebpart.fromComponentDef(FPSPageInfo[0]);
-              console.log('part:', part);
-
-              part.setProperties<any>( newFPSPageInfoDefaults ); //"custCatLogi": "Property;Planning;CAPEX;Other"
+            if ( copyProps.sourceModern === true ) {
 
               try {
-                const section1 = page.addSection().addControl( part );
-                update.sections.push( 'Added section FPS Page Info');
-                webPartNotes.push( 'Page Info web part added to the page.' );
-                if ( copyProps.pageInfo.props ) {
-                  if ( copyProps.pageInfo.errors.length === 0 ) { webPartNotes.push( `--> PageInfoPresets attemped:  ${copyProps.pageInfo.props}`); }
-                  else {  webPartNotes.push( `--> PageInfoPresets FAILED:  ${copyProps.pageInfo.props}`); }
-                }
-
+                let web = await Web( `${window.location.origin}${copyProps.sourcePickedWeb.ServerRelativeUrl}` );
+                const source: IClientsidePage = await web.loadClientsidePage( item.FileLeafRef );
+  
+                await source.copyTo( page );
+                page.save();
               } catch {
-                comments.push('FAILED section FPS Page Info');
-                update.sections.push( 'FAILED section FPS Page Info');
-                webPartNotes.push( 'Had ISSUE adding Page Info web part to the page.' );
+                let errMess = `${ item.FileLeafRef } ${ page.title }`
+                comments.push( errMess );
+                update.sections.push( errMess );
               }
-            }
-
-            /***
-             *     .d8b.  d8888b. d8888b.      d888888b d888888b db      d88888b .d8888. 
-             *    d8' `8b 88  `8D 88  `8D      `~~88~~'   `88'   88      88'     88'  YP 
-             *    88ooo88 88   88 88   88         88       88    88      88ooooo `8bo.   
-             *    88~~~88 88   88 88   88         88       88    88      88~~~~~   `Y8b. 
-             *    88   88 88  .8D 88  .8D         88      .88.   88booo. 88.     db   8D 
-             *    YP   YP Y8888D' Y8888D'         YP    Y888888P Y88888P Y88888P `8888Y' 
-             *                                                                           
-             *                                                                           
-             */
-
-            //PivotTilesTeamsDefaults              if ( PivotTiles.length === 0 ) {
-            if ( copyProps.pivotTiles.add !== true  ) {
-              //Do nothing
-
-            } else if ( PivotTiles.length === 0 ) {
-              alert( 'PivotTiles app is NOT yet available on this site.  Please add to app catalog and then re-run :)' ) ;
-              webPartNotes.push( 'Pivot Tiles web part NOT available on this site yet.  Did NOT add.' );
-
+              
             } else {
-              const part = ClientsideWebpart.fromComponentDef(PivotTiles[0]);
-              console.log('part:', part);
 
-              part.setProperties<any>( newPivotTilesTeamsDefaults );
 
-              try {
-                const section1 = page.addSection().addControl( part );
-                update.sections.push( 'Added section Pivot Tiles');
-                webPartNotes.push( 'Pivot Tiles web part added to the page.' );
-                if ( copyProps.pivotTiles.props ) {
-                  if ( copyProps.pivotTiles.errors.length === 0 ) { webPartNotes.push( `--> PivotTilesPresets attemped:  ${copyProps.pivotTiles.props}`); }
-                  else {  webPartNotes.push( `--> PivotTilesPresets FAILED:  ${copyProps.pivotTiles.props}`); }
-                }
-              } catch {
-                comments.push('FAILED section Pivot Tiles');
-                update.sections.push( 'FAILED section Pivot Tiles');
-                webPartNotes.push( 'Had ISSUE adding Pivot Tiles web part to the page.' );
-              }
-            }
 
-            /***
-             *     .d8b.  d8888b. d8888b.       .o88b.  .d88b.  d8b   db d888888b d88888b d8b   db d888888b 
-             *    d8' `8b 88  `8D 88  `8D      d8P  Y8 .8P  Y8. 888o  88 `~~88~~' 88'     888o  88 `~~88~~' 
-             *    88ooo88 88   88 88   88      8P      88    88 88V8o 88    88    88ooooo 88V8o 88    88    
-             *    88~~~88 88   88 88   88      8b      88    88 88 V8o88    88    88~~~~~ 88 V8o88    88    
-             *    88   88 88  .8D 88  .8D      Y8b  d8 `8b  d8' 88  V888    88    88.     88  V888    88    
-             *    YP   YP Y8888D' Y8888D'       `Y88P'  `Y88P'  VP   V8P    YP    Y88888P VP   V8P    YP    
-             *                                                                                              
-             *                                                                                              
-             */
 
-            //This attemps to remove the table on pages found in financial manual
-              if ( copyProps.removeLayoutsZoneInner === true ) {
-                const hasFirstLayoutsZoneInner = newWikiField.indexOf('layoutszone-inner') ;
-                if ( hasFirstLayoutsZoneInner > -1 ) {
-                  const openInnerPos = newWikiField.indexOf( '>', hasFirstLayoutsZoneInner );
 
-                  const hasLastLayoutsZoneInner = newWikiField.lastIndexOf('layoutszone-inner') ;
-                  const closeInnerPos = newWikiField.lastIndexOf( '>', hasLastLayoutsZoneInner );
+                
 
-                  newWikiField = newWikiField.substring( openInnerPos + 1, closeInnerPos + 1 );
-                  console.log('newWikiField ~ 575:' , newWikiField );
-                  newWikiField = newWikiField.replace('<td class="ms-wiki-columnSpacing" style="width:33.3%;"><div class="ms-rte-layoutszone-outer" style="width:100%;">','');
-                  console.log('newWikiField ~ 577:' , newWikiField );
-                  newWikiField = '<div>' + newWikiField + '</div>';
-                  // console.log( `modified ewWikiField`, newWikiField );
+              
+              /***
+               *     .d8b.  d8888b. d8888b.      d8888b.  .d8b.   d888b  d88888b      d888888b d8b   db d88888b  .d88b.  
+               *    d8' `8b 88  `8D 88  `8D      88  `8D d8' `8b 88' Y8b 88'            `88'   888o  88 88'     .8P  Y8. 
+               *    88ooo88 88   88 88   88      88oodD' 88ooo88 88      88ooooo         88    88V8o 88 88ooo   88    88 
+               *    88~~~88 88   88 88   88      88~~~   88~~~88 88  ooo 88~~~~~         88    88 V8o88 88~~~   88    88 
+               *    88   88 88  .8D 88  .8D      88      88   88 88. ~8~ 88.            .88.   88  V888 88      `8b  d8' 
+               *    YP   YP Y8888D' Y8888D'      88      YP   YP  Y888P  Y88888P      Y888888P VP   V8P YP       `Y88P'  
+               *                                                                                                         
+               *                                                                                                         
+               */
 
+              if ( copyProps.pageInfo.add !== true  ) {
+                //Do nothing
+
+              } else if ( FPSPageInfo.length === 0 ) {
+                alert( 'FPSPageInfo app is NOT yet available on this site.  Please add to app catalog and then re-run :)' ) ;
+                webPartNotes.push( 'Page Info web part NOT available on this site yet.  Did NOT add.' );
+
+              } else {
+                const part = ClientsideWebpart.fromComponentDef(FPSPageInfo[0]);
+                console.log('part:', part);
+
+                part.setProperties<any>( newFPSPageInfoDefaults ); //"custCatLogi": "Property;Planning;CAPEX;Other"
+
+                try {
+                  const section1 = page.addSection().addControl( part );
+                  update.sections.push( 'Added section FPS Page Info');
+                  webPartNotes.push( 'Page Info web part added to the page.' );
+                  if ( copyProps.pageInfo.props ) {
+                    if ( copyProps.pageInfo.errors.length === 0 ) { webPartNotes.push( `--> PageInfoPresets attemped:  ${copyProps.pageInfo.props}`); }
+                    else {  webPartNotes.push( `--> PageInfoPresets FAILED:  ${copyProps.pageInfo.props}`); }
+                  }
+
+                } catch {
+                  comments.push('FAILED section FPS Page Info');
+                  update.sections.push( 'FAILED section FPS Page Info');
+                  webPartNotes.push( 'Had ISSUE adding Page Info web part to the page.' );
                 }
               }
 
+              /***
+               *     .d8b.  d8888b. d8888b.      d888888b d888888b db      d88888b .d8888. 
+               *    d8' `8b 88  `8D 88  `8D      `~~88~~'   `88'   88      88'     88'  YP 
+               *    88ooo88 88   88 88   88         88       88    88      88ooooo `8bo.   
+               *    88~~~88 88   88 88   88         88       88    88      88~~~~~   `Y8b. 
+               *    88   88 88  .8D 88  .8D         88      .88.   88booo. 88.     db   8D 
+               *    YP   YP Y8888D' Y8888D'         YP    Y888888P Y88888P Y88888P `8888Y' 
+               *                                                                           
+               *                                                                           
+               */
 
-            const wikiSplits = newWikiField.split('<img ' );
-            let newSplits = [];
-            let imageUrls = [];
+              //PivotTilesTeamsDefaults              if ( PivotTiles.length === 0 ) {
+              if ( copyProps.pivotTiles.add !== true  ) {
+                //Do nothing
 
-            wikiSplits.map( ( content, idx ) => {
-              let newContent = content;
-              let thisImageUrl = '';
-              let src1 = content.indexOf('src="');
-              if ( src1 > -1 ) { 
-                let quote2 = content.indexOf( '"', src1 + 5 );
-                thisImageUrl = content.substring( src1  + 5, quote2 );
-                imageUrls.push( window.location.origin + thisImageUrl );
+              } else if ( PivotTiles.length === 0 ) {
+                alert( 'PivotTiles app is NOT yet available on this site.  Please add to app catalog and then re-run :)' ) ;
+                webPartNotes.push( 'Pivot Tiles web part NOT available on this site yet.  Did NOT add.' );
+
+              } else {
+                const part = ClientsideWebpart.fromComponentDef(PivotTiles[0]);
+                console.log('part:', part);
+
+                part.setProperties<any>( newPivotTilesTeamsDefaults );
+
+                try {
+                  const section1 = page.addSection().addControl( part );
+                  update.sections.push( 'Added section Pivot Tiles');
+                  webPartNotes.push( 'Pivot Tiles web part added to the page.' );
+                  if ( copyProps.pivotTiles.props ) {
+                    if ( copyProps.pivotTiles.errors.length === 0 ) { webPartNotes.push( `--> PivotTilesPresets attemped:  ${copyProps.pivotTiles.props}`); }
+                    else {  webPartNotes.push( `--> PivotTilesPresets FAILED:  ${copyProps.pivotTiles.props}`); }
+                  }
+                } catch {
+                  comments.push('FAILED section Pivot Tiles');
+                  update.sections.push( 'FAILED section Pivot Tiles');
+                  webPartNotes.push( 'Had ISSUE adding Pivot Tiles web part to the page.' );
+                }
               }
 
-              //Add back the image tag removed in the split
-              const warningElement = VerifyImg.replace( VerifyReplaceString, decodeURI(thisImageUrl) );
-              if ( idx > 0 ) { newContent = warningElement + '<img ' + content; }
+              /***
+               *     .d8b.  d8888b. d8888b.       .o88b.  .d88b.  d8b   db d888888b d88888b d8b   db d888888b 
+               *    d8' `8b 88  `8D 88  `8D      d8P  Y8 .8P  Y8. 888o  88 `~~88~~' 88'     888o  88 `~~88~~' 
+               *    88ooo88 88   88 88   88      8P      88    88 88V8o 88    88    88ooooo 88V8o 88    88    
+               *    88~~~88 88   88 88   88      8b      88    88 88 V8o88    88    88~~~~~ 88 V8o88    88    
+               *    88   88 88  .8D 88  .8D      Y8b  d8 `8b  d8' 88  V888    88    88.     88  V888    88    
+               *    YP   YP Y8888D' Y8888D'       `Y88P'  `Y88P'  VP   V8P    YP    Y88888P VP   V8P    YP    
+               *                                                                                              
+               *                                                                                              
+               */
 
-              newSplits.push( newContent ) ;
+              //This attemps to remove the table on pages found in financial manual
+                if ( copyProps.removeLayoutsZoneInner === true ) {
+                  const hasFirstLayoutsZoneInner = newWikiField.indexOf('layoutszone-inner') ;
+                  if ( hasFirstLayoutsZoneInner > -1 ) {
+                    const openInnerPos = newWikiField.indexOf( '>', hasFirstLayoutsZoneInner );
 
-            });
+                    const hasLastLayoutsZoneInner = newWikiField.lastIndexOf('layoutszone-inner') ;
+                    const closeInnerPos = newWikiField.lastIndexOf( '>', hasLastLayoutsZoneInner );
 
-            //Rejoin newWikiField with embedded warnings
-            newWikiField = newSplits.join('');
+                    newWikiField = newWikiField.substring( openInnerPos + 1, closeInnerPos + 1 );
+                    console.log('newWikiField ~ 575:' , newWikiField );
+                    newWikiField = newWikiField.replace('<td class="ms-wiki-columnSpacing" style="width:33.3%;"><div class="ms-rte-layoutszone-outer" style="width:100%;">','');
+                    console.log('newWikiField ~ 577:' , newWikiField );
+                    newWikiField = '<div>' + newWikiField + '</div>';
+                    // console.log( `modified ewWikiField`, newWikiField );
 
-            if ( copyProps.addImageWebParts === true ) {
-              const section2 = page.addSection();
-              imageUrls.map( ( url, idx ) => {
+                  }
+                }
 
-                const imagePartX = ClientsideWebpart.fromComponentDef(ImageWebPart[0]);
-                imagePartX.setProperties<any>( ImageWebPartDefaults );
-                imagePartX.setServerProcessedContent<any>({
-                    imageSources: { imageSource: url }
-                });
-                let placeholderText = VerifyImg.replace( VerifyReplaceString, decodeURI(url) ? decodeURI(url) : 'Did not detect an image Url :(' ); 
-                section2.addControl(new ClientsideText(placeholderText));
-                section2.addControl(imagePartX);
+
+              const wikiSplits = newWikiField.split('<img ' );
+              let newSplits = [];
+              let imageUrls = [];
+
+              wikiSplits.map( ( content, idx ) => {
+                let newContent = content;
+                let thisImageUrl = '';
+                let src1 = content.indexOf('src="');
+                if ( src1 > -1 ) { 
+                  let quote2 = content.indexOf( '"', src1 + 5 );
+                  thisImageUrl = content.substring( src1  + 5, quote2 );
+                  imageUrls.push( window.location.origin + thisImageUrl );
+                }
+
+                //Add back the image tag removed in the split
+                const warningElement = VerifyImg.replace( VerifyReplaceString, decodeURI(thisImageUrl) );
+                if ( idx > 0 ) { newContent = warningElement + '<img ' + content; }
+
+                newSplits.push( newContent ) ;
 
               });
 
-            }
+              //Rejoin newWikiField with embedded warnings
+              newWikiField = newSplits.join('');
 
-            console.log( 'wikiSplits:', newSplits );
+              if ( copyProps.addImageWebParts === true ) {
+                const section2 = page.addSection();
+                imageUrls.map( ( url, idx ) => {
+
+                  const imagePartX = ClientsideWebpart.fromComponentDef(ImageWebPart[0]);
+                  imagePartX.setProperties<any>( ImageWebPartDefaults );
+                  imagePartX.setServerProcessedContent<any>({
+                      imageSources: { imageSource: url }
+                  });
+                  let placeholderText = VerifyImg.replace( VerifyReplaceString, decodeURI(url) ? decodeURI(url) : 'Did not detect an image Url :(' ); 
+                  section2.addControl(new ClientsideText(placeholderText));
+                  section2.addControl(imagePartX);
+
+                });
+
+              }
+
+              console.log( 'wikiSplits:', newSplits );
 
 
-            /***
-             *     .d8b.  d8888b. d8888b.      d8b   db  .d88b.  d888888b d88888b .d8888. 
-             *    d8' `8b 88  `8D 88  `8D      888o  88 .8P  Y8. `~~88~~' 88'     88'  YP 
-             *    88ooo88 88   88 88   88      88V8o 88 88    88    88    88ooooo `8bo.   
-             *    88~~~88 88   88 88   88      88 V8o88 88    88    88    88~~~~~   `Y8b. 
-             *    88   88 88  .8D 88  .8D      88  V888 `8b  d8'    88    88.     db   8D 
-             *    YP   YP Y8888D' Y8888D'      VP   V8P  `Y88P'     YP    Y88888P `8888Y' 
-             *                                                                            
-             *                                                                            
-             */
+              /***
+               *     .d8b.  d8888b. d8888b.      d8b   db  .d88b.  d888888b d88888b .d8888. 
+               *    d8' `8b 88  `8D 88  `8D      888o  88 .8P  Y8. `~~88~~' 88'     88'  YP 
+               *    88ooo88 88   88 88   88      88V8o 88 88    88    88    88ooooo `8bo.   
+               *    88~~~88 88   88 88   88      88 V8o88 88    88    88    88~~~~~   `Y8b. 
+               *    88   88 88  .8D 88  .8D      88  V888 `8b  d8'    88    88.     db   8D 
+               *    YP   YP Y8888D' Y8888D'      VP   V8P  `Y88P'     YP    Y88888P `8888Y' 
+               *                                                                            
+               *                                                                            
+               */
 
-            try {
+              try {
 
-              webPartNotes.push( 'Added this section with update notes' );
-              let rightNow = new Date();
-              // <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
-              // <div>Copied from <a onclick={window.open(item.FileRef, "_blank")}href="${ item.FileRef }">${item.FileRef}</a></div>
+                webPartNotes.push( 'Added this section with update notes' );
+                let rightNow = new Date();
+                // <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
+                // <div>Copied from <a onclick={window.open(item.FileRef, "_blank")}href="${ item.FileRef }">${item.FileRef}</a></div>
 
-              const replaceLibUrls = `<div>Updated all source library urls on page: </br> &nbsp;&nbsp;&nbsp; ${sourceLibraryUrl} >>>> ${ destLibraryUrl }</div>`;
-              webPartNotes.push( replaceLibUrls );
+                const replaceLibUrls = `<div>Updated all source library urls on page: </br> &nbsp;&nbsp;&nbsp; ${sourceLibraryUrl} >>>> ${ destLibraryUrl }</div>`;
+                webPartNotes.push( replaceLibUrls );
 
-              const replaceWebUrls = copyProps.replaceWebUrls !== true ? '' :
-                `<div>Replaced all string instance: </br> &nbsp;&nbsp;&nbsp; ${sourceWebUrl} >>>> ${destWebUrl}</div>`;
-              if ( copyProps.replaceWebUrls === true ) webPartNotes.push( replaceWebUrls );
+                const replaceWebUrls = copyProps.replaceWebUrls !== true ? '' :
+                  `<div>Replaced all string instance: </br> &nbsp;&nbsp;&nbsp; ${sourceWebUrl} >>>> ${destWebUrl}</div>`;
+                if ( copyProps.replaceWebUrls === true ) webPartNotes.push( replaceWebUrls );
 
-              const markImagesAndLinks = copyProps.markImagesAndLinks !== true ? '' :
-                `<div>Highighted all links and image tags on the page</br> &nbsp;&nbsp;&nbsp; so you can more easily find and verify them.</div>`;
-                if ( copyProps.markImagesAndLinks === true ) webPartNotes.push( markImagesAndLinks );
+                const markImagesAndLinks = copyProps.markImagesAndLinks !== true ? '' :
+                  `<div>Highighted all links and image tags on the page</br> &nbsp;&nbsp;&nbsp; so you can more easily find and verify them.</div>`;
+                  if ( copyProps.markImagesAndLinks === true ) webPartNotes.push( markImagesAndLinks );
 
-              const imageWebParts = copyProps.addImageLinksToSummary !== true ? '' : `<div>
-                Images to verify - CTRL-Click to open in new window:
-                </div>
-                <div>
-                   <ul>${ imageUrls.map( imageLink => { return `<li><a href="${ imageLink }">${ decodeURI(imageLink.replace(window.location.origin, '').replace(copyProps.destPickedWeb.ServerRelativeUrl, '')) }</a></li>` ; } ).join('') }</ul>
+                const imageWebParts = copyProps.addImageLinksToSummary !== true ? '' : `<div>
+                  Images to verify - CTRL-Click to open in new window:
+                  </div>
+                  <div>
+                    <ul>${ imageUrls.map( imageLink => { return `<li><a href="${ imageLink }">${ decodeURI(imageLink.replace(window.location.origin, '').replace(copyProps.destPickedWeb.ServerRelativeUrl, '')) }</a></li>` ; } ).join('') }</ul>
+                  </div>`;
+                const linksFound = `<div>Links found: ${ update.links }</div>`;
+
+                const specialReplacementsInfo = specialReplacementsCount === 0 ? '' :  `<div>Special Links fixed: ${specialReplacementsCount } => ${specialReplacementsNote } </div>`;
+
+                const linksSpaceFixed = replacePageSpacesLinks.length === 0 ? '' :  `<div>Site Page links updated:  Replaced spaces with hyphens: ${ replacePageSpacesLinks.length }</div>`;
+                const logHTML = `<h2>Page Migration log :)</h2><div>
+
+                  <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
+                  <div>via script at: ${ rightNow.toUTCString() }</div>
+                  <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
+                  <div>Results</div>
+                  <div><ol>${ webPartNotes.map( note => { return `<li>${ note }</li>` ; } ).join('') }</ol></div>
+                  ${ linksFound }
+                  ${ specialReplacementsInfo }
+                  ${ linksSpaceFixed }
+                  ${ imageWebParts }
                 </div>`;
-              const linksFound = `<div>Links found: ${ update.links }</div>`;
 
-              const specialReplacementsInfo = specialReplacementsCount === 0 ? '' :  `<div>Special Links fixed: ${specialReplacementsCount } => ${specialReplacementsNote } </div>`;
+                const section4 = page.addSection().addControl(new ClientsideText( logHTML ));
+                update.sections.push( 'Added script log section');
 
-              const linksSpaceFixed = replacePageSpacesLinks.length === 0 ? '' :  `<div>Site Page links updated:  Replaced spaces with hyphens: ${ replacePageSpacesLinks.length }</div>`;
-              const logHTML = `<h2>Page Migration log :)</h2><div>
+              } catch {
+                comments.push('FAILED script log Content');
+                update.sections.push( 'FAILED script log section');
+              }
 
-                <div>Copied from <a href="${ item.FileRef }">${item.FileRef}</a></div>
-                <div>via script at: ${ rightNow.toUTCString() }</div>
-                <div>by ${ copyProps.user } at ${ rightNow.toLocaleString() } Local Time</div>
-                <div>Results</div>
-                <div><ol>${ webPartNotes.map( note => { return `<li>${ note }</li>` ; } ).join('') }</ol></div>
-                ${ linksFound }
-                ${ specialReplacementsInfo }
-                ${ linksSpaceFixed }
-                ${ imageWebParts }
-              </div>`;
+              //Add original wikiField content to the new page
+              try {
+                const section3 = page.addSection().addControl(new ClientsideText(newWikiField));
+                update.sections.push( 'Added sectionL Text Content');
+              } catch {
+                comments.push('FAILED sectionL Text Content');
+                update.sections.push( 'FAILED sectionL Text Content');
+              }
 
-              const section4 = page.addSection().addControl(new ClientsideText( logHTML ));
-              update.sections.push( 'Added script log section');
+              try {
+                await page.save();
+                update.saved = true;
 
-            } catch {
-              comments.push('FAILED script log Content');
-              update.sections.push( 'FAILED script log section');
+              } catch(e) {
+                comments.push('FAILED SAVE');
+              }
+
             }
-
-            //Add original wikiField content to the new page
-            try {
-              const section3 = page.addSection().addControl(new ClientsideText(newWikiField));
-              update.sections.push( 'Added sectionL Text Content');
-            } catch {
-              comments.push('FAILED sectionL Text Content');
-              update.sections.push( 'FAILED sectionL Text Content');
-            }
-
-            try {
-              await page.save();
-              update.saved = true;
-
-            } catch(e) {
-              comments.push('FAILED SAVE');
-            }
-
-            
             // filtered.push( item );
           } //End Meets search
 
@@ -847,7 +870,11 @@ export function pagePassesSearch( page: IAnyContent, search: ISearchState) {
 
     //itemFetchCol
     //let selectThese = '*,WikiField,FileRef,FileLeafRef,' + selColumns.join(",");
-    let selectThese = [ baseSelectColumns, ...selColumns, ...['WikiField'] ].join(",");
+
+    let contentFields: string[] = copyProps.sourceModern === false ? [ 'WikiField' ] : [ 'WikiField','CanvasContent1' ]; //,'LayoutsWebpartsContent' gave an error on modern pages TheSharePointHub so removing for now.
+    console.log('fetching contentFields:', contentFields );
+
+    let selectThese = [ baseSelectColumns, ...selColumns, ...contentFields ].join(",");
     let items: IAnyContent[] = [];
     let filtered: IAnyContent[] = [];
 

@@ -58,6 +58,8 @@ export interface ICreateThesePages {
   addImageWebParts: boolean;
   removeLayoutsZoneInner: boolean;
   addImageLinksToSummary: boolean;
+  
+  sourceModern: boolean;
 
   pivotTiles: {
     add: boolean;
@@ -101,14 +103,13 @@ export function clearSearchState() {
 
 }
 
-
 export type ISourceOrDest = 'source' | 'dest' ;
 
 export type ISearchLocations = 'FileLeafRef' | 'Title' | 'Description' | 'WikiField' | 'CanvaseContent1' | 'WebPart' | 'Modified' ;
 
 export type IValidWebParts = 'pivotTiles' | 'pageInfo';
 
-export type IOtherOptions = 'replaceWebUrls' | 'markImagesAndLinks' | 'replacePageSpaces' | 'addImageWebParts' | 'removeLayoutsZoneInner' | 'addImageLinksToSummary';
+export type IOtherOptions = 'replaceWebUrls' | 'markImagesAndLinks' | 'replacePageSpaces' | 'addImageWebParts' | 'removeLayoutsZoneInner' | 'addImageLinksToSummary' | 'sourceModern' ;
 
 export const OtherOptions : IOtherOptions[] = [  'replaceWebUrls', 'markImagesAndLinks', 'replacePageSpaces' , 'addImageWebParts' , 'removeLayoutsZoneInner', 'addImageLinksToSummary' ];
 

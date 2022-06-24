@@ -3,7 +3,7 @@ import styles from './ModernCreator.module.scss';
 import { clearSearchState, IAllTextBoxTypes, IAnyContent, ICreateThesePages, IModernCreatorProps, IModernCreatorState, IOtherOptions, ISearchLocations, ISearchState, ISourceOrDest, IValidWebParts, OtherOptions, validSearchLocations, ValidWebParts } from './IModernCreatorProps';
 import { sp, Views, IViews, ISite } from "@pnp/sp/presets/all";
 
-import { Toggle } from 'office-ui-fabric-react/lib/Toggle';
+import { Toggle, IToggleStyles, IToggleProps } from 'office-ui-fabric-react/lib/Toggle';
 
 import { Label, ILabelStyles } from 'office-ui-fabric-react/lib/Label';
 import { Pivot, PivotItem, IPivotItemProps} from 'office-ui-fabric-react/lib/Pivot';
@@ -45,7 +45,10 @@ export const BaseErrorTrace = `ModernCreator|${ strings.analyticsWeb }|${ string
 
 const defToggleStyle = { root: { width: 160, } };
 
-const optToggleStyle = { root: { width: 200, } };
+const optToggleStyle = { root: { width: 180, } };
+
+const classicToggleStyle: IToggleStyles = { root: { width: 250, },  text: { fontSize: 'x-large' , fontWeight: 'bold', color: 'green' }, label: null, container: { alignItems: 'center'}, pill: null, thumb: null };
+const modernToggleStyle: IToggleStyles = { root: { width: 250, },  text: { fontSize: 'x-large' , fontWeight: 600, color: 'blue' }, label: null, container: { alignItems: 'center'}, pill: null, thumb: null };
 
 export default class ModernCreator extends React.Component<IModernCreatorProps, IModernCreatorState> {
 
@@ -212,6 +215,7 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
         addImageWebParts: true,
         removeLayoutsZoneInner: true,
         addImageLinksToSummary: true,
+        sourceModern: false,
 
         pageInfo: {
           add: true,
@@ -458,11 +462,25 @@ export default class ModernCreator extends React.Component<IModernCreatorProps, 
 
     });
 
+
+    let modernToggle = <div style={{ display: 'inline-flex' }}><Toggle label={ `Source Page` }
+          onChange={ () => { this.toggleOptions( 'sourceModern' ) ; } }
+          checked={ this.state.copyProps.sourceModern }
+          styles={ this.state.copyProps.sourceModern === true ? modernToggleStyle: classicToggleStyle }
+          onText={ 'Modern' }
+          offText={ 'Classic' }
+          disabled={ true }
+        />
+      </div>;
+
+
     const filteredUrls = this.state.filtered.map( ( item: IAnyContent ) => { return item.FileLeafRef ; });
+
+    let headingStyles: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
 
     return (
       <section className={`${styles.modernCreator} ${hasTeamsContext ? styles.teams : ''}`}>
-        <h2>Modernize Classic Site Pages - v1.0.1.3<a style={{ marginLeft: 30 }} target="_blank" href='https://github.com/mikezimm/LibraryCopier/issues/'>Go to Issues</a></h2>
+        <h2 style={ headingStyles }>Modernize Classic Site Pages - v1.0.1.3<a style={{ marginLeft: 30, marginRight: 30 }} target="_blank" href='https://github.com/mikezimm/LibraryCopier/issues/'>Go to Issues</a>{modernToggle}</h2>
         <div className={ null }>
           <div className={ styles.textControlsBox } style={{ }}>
 
